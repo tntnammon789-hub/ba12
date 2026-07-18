@@ -41,7 +41,7 @@
             flex-direction: column;
             box-sizing: border-box;
             height: 100vh;
-            overflow: hidden; /* ล็อคโครงสร้างหลัก */
+            overflow: hidden;
         }
 
         /* Responsive Settings Mobile (50/50 Layout) */
@@ -89,7 +89,7 @@
         }
         .manual-link-btn:hover { background: var(--primary); color: white; transform: scale(1.05); }
 
-        /* 🛒 ตะกร้าสินค้าแบบคลิกเพื่อเปิด/ปิด */
+        /* 🛒 ตะกร้าสินค้า */
         #cart-section {
             background: #eef2f7; 
             border-radius: 12px;
@@ -116,7 +116,6 @@
         }
         .cart-header-clickable:hover { background: #cbd5e1; }
         
-        /* ปรับดีไซน์ Remark จำนวนชิ้นงานให้อยู่ในแถวเดียวกันอย่างสวยงาม */
         .cart-remark-badge {
             color: var(--danger);
             font-weight: 800;
@@ -129,16 +128,15 @@
             display: inline-block;
         }
         
-        /* สัดส่วนตัวกล่องด้านในตะกร้า: ตั้งค่าให้จำกัดขนาดความสูงและเปิดเลื่อน Scroll ได้ */
         #cart-content-wrapper {
             padding: 0 12px 12px 12px;
-            display: none; /* เริ่มต้นซ่อนไว้ */
+            display: none;
             background: #eef2f7;
         }
         
         #cart-items-list {
-            max-height: 160px; /* จำกัดความสูงไม่ให้กินพื้นที่รายการสินค้าหลัก */
-            overflow-y: auto;   /* เปิดให้สามารถเลื่อนสกรอลล์ขึ้นลงได้อิสระเมื่อของมีจำนวนมาก */
+            max-height: 160px;
+            overflow-y: auto;
             padding-top: 12px;
         }
         
@@ -161,7 +159,7 @@
         .add-cart-btn { background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: background 0.2s; white-space: nowrap; }
         .add-cart-btn:hover { background: #004085; }
 
-        /* 📄 ส่วนท้ายของเมนู (Sidebar Footer) สำหรับวางปุ่มออกเอกสาร PDF ไว้ด้านล่างสุด */
+        /* 📄 Sidebar Footer สำหรับปุ่ม PDF */
         .sidebar-footer {
             margin-top: auto;
             padding-top: 10px;
@@ -189,17 +187,27 @@
         }
         .pdf-download-btn:hover { background: #1e7e34; }
 
-        /* CSS สำหรับส่งออกหน้ากระดาษ PDF */
-        @media print {
-            body * { visibility: hidden; }
-            #print-pdf-layout, #print-pdf-layout * { visibility: visible; }
-            #print-pdf-layout { position: absolute; left: 0; top: 0; width: 100%; padding: 30px; box-sizing: border-box; }
-            .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            .print-table th, .print-table td { border: 1px solid #333; padding: 10px; text-align: left; font-size: 14px; }
-            .print-table th { background-color: #f2f2f2; }
+        /* 🖨️ จัดสไตล์ระบบพิมพ์รายงานเอกสารออกเป็นหน้า PDF (แก้ไขการแสดงผลเรียบร้อย) */
+        #print-pdf-layout { 
+            display: none; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
-        
-        #print-pdf-layout { display: none; }
+
+        @media print {
+            /* ซ่อนหน้าเว็บหลักทั้งหมดออกไป */
+            #page-wrapper, #page-wrapper * { display: none !important; }
+            
+            /* แสดงเฉพาะหน้าโครงสร้าง PDF ที่เราเตรียมข้อมูลไว้ */
+            #print-pdf-layout { 
+                display: block !important; 
+                width: 100%; 
+                padding: 10px; 
+                box-sizing: border-box; 
+            }
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+            .print-table th, .print-table td { border: 1px solid #000; padding: 10px; text-align: left; font-size: 14px; }
+            .print-table th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -207,27 +215,33 @@
 </head>
 <body>
 
-    <!-- Layout สำหรับพิมพ์เอกสารสั่งซื้อส่งออกไฟล์ PDF -->
+    <!-- พื้นที่จัดเตรียมข้อมูลพิมพ์เอกสารส่งออก PDF (แสดงผลเฉพาะตอนสั่งพิมพ์เท่านั้น) -->
     <div id="print-pdf-layout">
-        <div style="border-bottom: 3px solid #0056b3; padding-bottom: 10px; margin-bottom: 20px;">
-            <h2 style="margin: 0; color: #0056b3;">ใบรายการความต้องการอะไหล่ / Spare Parts Request</h2>
-            <p style="margin: 5px 0 0 0; font-size: 12px; color: #555;">เครื่องพิมพ์เครื่องติดฉลาก รุ่น Alpha Compact RH 120</p>
+        <div style="border-bottom: 3px solid #0056b3; padding-bottom: 12px; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #0056b3; font-size: 24px;">ใบรายการเบิกชิ้นส่วนอะไหล่ / Spare Parts Request</h2>
+            <p style="margin: 6px 0 0 0; font-size: 13px; color: #444;">เครื่องติดฉลากอัตโนมัติรุ่น: Alpha Compact RH 120 (Weber Group)[cite: 1]</p>
         </div>
-        <p><strong>วันที่ออกเอกสาร:</strong> <span id="print-date"></span></p>
+        <p style="font-size: 14px;"><strong>วันที่ออกเอกสารระบบ:</strong> <span id="print-date"></span></p>
         <table class="print-table">
             <thead>
                 <tr>
-                    <th>ลำดับ (No.)</th>
-                    <th>รหัสอะไหล่ (Part Number)</th>
-                    <th>รายการชิ้นส่วน (Description)</th>
-                    <th>จำนวนที่สั่ง (Quantity)</th>
+                    <th style="width: 10%;">ลำดับ</th>
+                    <th style="width: 25%;">รหัสอะไหล่ (Part Number)</th>
+                    <th style="width: 50%;">รายการชิ้นส่วนอะไหล่ (Description)</th>
+                    <th style="width: 15%;">จำนวนสั่งเบิก</th>
                 </tr>
             </thead>
             <tbody id="print-table-body"></tbody>
         </table>
-        <div style="margin-top: 50px; text-align: right; font-size: 14px;">
-            <p>ลงชื่อ..........................................................ผู้เบิก/สั่งซื้อ</p>
-            <p style="margin-right: 40px; color: #666;">( ผู้เชี่ยวชาญเทคนิควิศวกรรม )</p>
+        <div style="margin-top: 60px; display: flex; justify-content: space-between; font-size: 14px; padding: 0 20px;">
+            <div>
+                <p>ลงชื่อ..........................................................ผู้ตรวจสอบ</p>
+                <p style="margin-left: 35px; color: #555;">( หัวหน้าแผนกวิศวกรรมเทคนิค )</p>
+            </div>
+            <div style="text-align: right;">
+                <p>ลงชื่อ..........................................................ผู้เบิกชิ้นส่วน</p>
+                <p style="margin-right: 45px; color: #555;">( เจ้าหน้าที่ผู้ปฏิบัติงานประจำเครื่อง )</p>
+            </div>
         </div>
     </div>
 
@@ -242,7 +256,7 @@
                 </a>
             </div>
             
-            <!-- ตะกร้าสินค้าแบบกดพับ/เปิดสไลด์ดูรายการ -->
+            <!-- ตะกร้าสินค้า -->
             <div id="cart-section">
                 <div class="cart-header-clickable" onclick="toggleCartView()" title="กดเพื่อเปิด/ปิดดูรายละเอียดภายในตะกร้า">
                     <div>
@@ -252,17 +266,14 @@
                     <span id="toggle-arrow" style="font-size: 11px; color: #666;">กดเพื่อขยายดูรายละเอียด ⚡</span>
                 </div>
                 <div id="cart-content-wrapper">
-                    <!-- รายการอะไหล่ด้านในเปิดสกรอลล์เลื่อนขึ้นลงได้เต็มที่เมื่อของเยอะ -->
                     <div id="cart-items-list">
                         <div style="color:#888; font-size:12px; text-align:center; padding:5px;">ยังไม่ได้เลือกชิ้นส่วน</div>
                     </div>
                 </div>
             </div>
 
-            <!-- กล่องรายการสินค้าหลักตรงกลางเปิดเลื่อนขึ้นลงปกติ -->
             <div class="parts-container" id="dynamic-parts-list"></div>
             
-            <!-- 📄 ย้ายแถบปุ่มดาวน์โหลดเอกสาร PDF มาไว้ที่ท้ายสุดของเมนูด้านล่างหน้าจอ -->
             <div class="sidebar-footer">
                 <button class="pdf-download-btn" onclick="generatePartsPDF()">📄 ออกเอกสารรายการอะไหล่ (PDF)</button>
             </div>
@@ -270,7 +281,7 @@
     </div>
 
     <script>
-        // ฐานข้อมูลรหัสอะไหล่[cite: 1]
+        // ฐานข้อมูลรหัสอะไหล่จากคู่มือ[cite: 1]
         const completePdfDatabase = {
             "Baugr. A: Gehäuse / Chassis": [
                 { pn: "40003271", name: "Cover with controller RH (base)" },
@@ -331,7 +342,6 @@
                 totalPieces += shoppingCart[pn].qty;
             });
 
-            // ปรับข้อความตัวอักษรบอกจำนวนชิ้นงานรวมในตะกร้าให้อัปเดต Real-time[cite: 1]
             remarkBadge.innerText = `[มีอะไหล่ในตะกร้า ${totalPieces} ชิ้น]`;
             
             if (keys.length === 0) {
@@ -364,6 +374,7 @@
             renderCart();
         };
 
+        // ฟังก์ชันสั่งพิมพ์ PDF (แก้ไขให้ข้อมูลโหลดขึ้นหน้าพิมพ์สมบูรณ์)
         window.generatePartsPDF = function() {
             const keys = Object.keys(shoppingCart);
             if(keys.length === 0) {
@@ -371,8 +382,10 @@
                 return;
             }
             
+            // ใส่เวลาปัจจุบันลงรายงานพิมพ์
             document.getElementById('print-date').innerText = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' }) + " น.";
             
+            // ดึงข้อมูลแถวตารางชิ้นงานอะไหล่เบิก
             const tbody = document.getElementById('print-table-body');
             tbody.innerHTML = keys.map((pn, index) => `
                 <tr>
@@ -383,10 +396,11 @@
                 </tr>
             `).join('');
             
+            // เรียกคำสั่งปริ้นเตอร์หลักของระบบเบราว์เซอร์
             window.print();
         };
 
-        // Render รายการอะไหล่หลัก
+        // Render รายการอะไหล่หลักลงระบบเมนู
         const listContainer = document.getElementById('dynamic-parts-list');
         Object.entries(completePdfDatabase).forEach(([section, items]) => {
             const secTitle = document.createElement('div');
@@ -408,7 +422,7 @@
             });
         });
 
-        // Initialize 3D Engine
+        // Initialize 3D WebGL Canvas
         const container3d = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xeeeeee);
