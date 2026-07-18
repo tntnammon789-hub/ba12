@@ -1,7 +1,3 @@
-
-# สร้างไฟล์ HTML ใหม่ที่ปรับปรุงตามความต้องการของผู้ใช้
-# สีธรรมดา แต่ดูมืออาชีพ (ไม่ใช่สีสันจัดจ้านแบบเดิม)
-
 html_content = '''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -273,17 +269,6 @@ html_content = '''<!DOCTYPE html>
             z-index: 40;
         }
 
-        #status-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            padding: 20px 30px;
-            pointer-events: none;
-            z-index: 40;
-        }
-
         #status-text {
             color: #0e639c;
             font-weight: 700;
@@ -308,7 +293,7 @@ html_content = '''<!DOCTYPE html>
                 </div>
             </div>
             <div id="status-bar">
-                <div id="status-text">🖱️ Hover over parts to identify</div>
+                <div id="status-text">Hover over parts to identify</div>
             </div>
             <div id="tooltip">
                 <img id="tooltip-img" src="" alt="Part Image">
@@ -499,8 +484,9 @@ html_content = '''<!DOCTYPE html>
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.2;
+        // FIX: เอา toneMapping ออกเพื่อป้องกันกระพริบ
+        // renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        // renderer.toneMappingExposure = 1.2;
         container.appendChild(renderer.domElement);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -541,53 +527,39 @@ html_content = '''<!DOCTYPE html>
         let loadedModel;
         
         // ===== สีธรรมดาแบบมืออาชีพ (Industrial Professional Palette) =====
-        // ใช้สีที่ดูสมจริงสำหรับชิ้นส่วนอุตสาหกรรม
         const professionalMaterialPalette = [
-            // สีขาว/เทาอ่อน - พลาสติก/ฝาครอบ
             { color: 0xf5f5f5, roughness: 0.4, metalness: 0.05 },
             { color: 0xe8e8e8, roughness: 0.35, metalness: 0.1 },
             { color: 0xdddddd, roughness: 0.3, metalness: 0.15 },
             { color: 0xd0d0d0, roughness: 0.4, metalness: 0.1 },
-            // สีเทากลาง - โลหะ/อลูมิเนียม
             { color: 0xc0c0c0, roughness: 0.25, metalness: 0.75 },
             { color: 0xb0b0b0, roughness: 0.2, metalness: 0.8 },
             { color: 0xa0a0a0, roughness: 0.3, metalness: 0.7 },
             { color: 0x909090, roughness: 0.25, metalness: 0.75 },
-            // สีเทาเข้ม - เหล็ก/สแตนเลส
             { color: 0x808080, roughness: 0.35, metalness: 0.85 },
             { color: 0x707070, roughness: 0.3, metalness: 0.9 },
             { color: 0x606060, roughness: 0.25, metalness: 0.85 },
             { color: 0x505050, roughness: 0.35, metalness: 0.8 },
-            // สีดำ - ยาง/พลาสติกดำ
             { color: 0x333333, roughness: 0.6, metalness: 0.1 },
             { color: 0x2a2a2a, roughness: 0.55, metalness: 0.15 },
             { color: 0x222222, roughness: 0.5, metalness: 0.2 },
             { color: 0x1a1a1a, roughness: 0.65, metalness: 0.05 },
-            // สีฟ้าอ่อน - ชิ้นส่วนอิเล็กทรอนิกส์/PCB
             { color: 0x3d7ea6, roughness: 0.4, metalness: 0.2 },
             { color: 0x4a8ab0, roughness: 0.35, metalness: 0.25 },
-            // สีแดง - สวิตช์/ปุ่มกด
             { color: 0xb03030, roughness: 0.35, metalness: 0.3 },
             { color: 0xcc4040, roughness: 0.3, metalness: 0.25 },
-            // สีเขียว - LED/สถานะ
             { color: 0x3a8a3a, roughness: 0.35, metalness: 0.2 },
             { color: 0x4a9a4a, roughness: 0.3, metalness: 0.25 },
-            // สีเหลือง - คำเตือน/สัญลักษณ์
             { color: 0xc4a030, roughness: 0.4, metalness: 0.15 },
             { color: 0xd4b040, roughness: 0.35, metalness: 0.2 },
-            // สีส้ม - สายไฟ/คอนเน็กเตอร์
             { color: 0xc07030, roughness: 0.4, metalness: 0.2 },
             { color: 0xd08040, roughness: 0.35, metalness: 0.25 },
-            // สีม่วงอ่อน - ไอโซเลเตอร์/ฉนวน
             { color: 0x8a6a9a, roughness: 0.45, metalness: 0.1 },
             { color: 0x9a7aaa, roughness: 0.4, metalness: 0.15 },
-            // สีน้ำตาล - ยาง/ซีล
             { color: 0x8b6b4b, roughness: 0.7, metalness: 0.05 },
             { color: 0x9a7b5b, roughness: 0.65, metalness: 0.1 },
-            // สีครีม - ไนลอน/พลาสติกวิศวกรรม
             { color: 0xe0d8c8, roughness: 0.4, metalness: 0.05 },
             { color: 0xd0c8b8, roughness: 0.35, metalness: 0.1 },
-            // สีเงิน - อลูมิเนียมขัดเงา
             { color: 0xd8d8d8, roughness: 0.15, metalness: 0.95 },
             { color: 0xe0e0e0, roughness: 0.1, metalness: 0.95 },
             { color: 0xc8c8c8, roughness: 0.2, metalness: 0.9 },
@@ -603,8 +575,9 @@ html_content = '''<!DOCTYPE html>
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
             
+            // FIX: ย้ายเครื่องให้อยู่ด้านบน (ปรับ Y ให้สูงขึ้น)
             loadedModel.position.x += (loadedModel.position.x - center.x);
-            loadedModel.position.y += (loadedModel.position.y - center.y);
+            loadedModel.position.y += (loadedModel.position.y - center.y) + 8; // +8 ยกขึ้นด้านบน
             loadedModel.position.z += (loadedModel.position.z - center.z);
             
             const maxDim = Math.max(size.x, size.y, size.z);
@@ -620,7 +593,6 @@ html_content = '''<!DOCTYPE html>
                         const originalMat = node.material.clone();
                         originalMaterials.set(node.uuid, originalMat);
                         
-                        // เลือกสีจาก palette แบบวนซ้ำ
                         const matConfig = professionalMaterialPalette[keyIndex % professionalMaterialPalette.length];
                         
                         node.material = new THREE.MeshStandardMaterial({
@@ -650,7 +622,7 @@ html_content = '''<!DOCTYPE html>
                 document.getElementById('loading-overlay').style.display = 'none';
             }, 500);
             
-            document.getElementById('status-text').innerText = '🎯 Click parts to select | Drag to rotate | Scroll to zoom';
+            document.getElementById('status-text').innerText = 'Click parts to select | Drag to rotate | Scroll to zoom';
             
         }, undefined, function(error) {
             console.error('Error loading model:', error);
@@ -710,7 +682,7 @@ html_content = '''<!DOCTYPE html>
                     currentActiveMesh = null;
                 }
                 tooltip.style.display = 'none';
-                document.getElementById('status-text').innerText = '🎯 Click parts to select | Drag to rotate | Scroll to zoom';
+                document.getElementById('status-text').innerText = 'Click parts to select | Drag to rotate | Scroll to zoom';
                 return;
             }
             
@@ -756,7 +728,7 @@ html_content = '''<!DOCTYPE html>
                             tooltipName.innerText = pInfo.name;
                             tooltip.style.display = 'block';
                             
-                            document.getElementById('status-text').innerText = `🔍 ${pInfo.id} - ${pInfo.name}`;
+                            document.getElementById('status-text').innerText = `${pInfo.id} - ${pInfo.name}`;
                             
                             if (hoveredPartId !== partId) {
                                 if (hoveredPartId) {
@@ -785,7 +757,7 @@ html_content = '''<!DOCTYPE html>
                         currentActiveMesh = null;
                     }
                     tooltip.style.display = 'none';
-                    document.getElementById('status-text').innerText = '🎯 Click parts to select | Drag to rotate | Scroll to zoom';
+                    document.getElementById('status-text').innerText = 'Click parts to select | Drag to rotate | Scroll to zoom';
                     
                     if (hoveredPartId) {
                         const prevItem = document.getElementById(`part-item-${hoveredPartId}`);
@@ -851,9 +823,8 @@ html_content = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# บันทึกไฟล์
-with open('/mnt/agents/output/3d_catalog_professional_colors.html', 'w', encoding='utf-8') as f:
+with open('/mnt/agents/output/3d_catalog_fixed.html', 'w', encoding='utf-8') as f:
     f.write(html_content)
 
-print("✅ บันทึกไฟล์สำเร็จ: 3d_catalog_professional_colors.html")
+print("✅ บันทึกไฟล์สำเร็จ: 3d_catalog_fixed.html")
 print(f"📄 ขนาดไฟล์: {len(html_content):,} ตัวอักษร")
