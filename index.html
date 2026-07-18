@@ -1,1098 +1,817 @@
-html_content = '''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Enterprise 3D Spare Part Catalog - Alpha Compact LH/RH</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weber Alpha Compact - 3D Spare Parts Viewer</title>
     <style>
-        * { box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            overflow: hidden; 
+            background: #f5f5f5; 
+        }
+        #app-container { display: flex; height: 100vh; flex-direction: column; }
         
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
-            background-color: #121212;
-            color: #e0e0e0;
-            -webkit-text-size-adjust: 100%;
-            touch-action: none;
+        /* Header */
+        .header { 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
+            color: white; 
+            padding: 12px 20px; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
         }
-
-        .wrapper {
-            display: flex;
-            width: 100%;
-            height: 100vh;
-            position: relative;
-            flex-direction: row;
+        .header-logo { 
+            width: 36px; 
+            height: 36px; 
+            background: #e94560; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
         }
-
-        /* ===== CANVAS AREA ===== */
-        #canvas-container {
-            width: 75vw;
-            height: 100vh;
-            position: relative;
-            background: radial-gradient(circle, #2a2a2a 0%, #141414 100%);
-            flex-shrink: 0;
+        .header h1 { font-size: 16px; margin: 0; }
+        .header p { font-size: 11px; margin: 0; opacity: 0.7; }
+        
+        /* Main Layout */
+        .main { display: flex; flex: 1; overflow: hidden; }
+        
+        /* Left Panel - Assemblies */
+        .left-panel { 
+            width: 260px; 
+            background: white; 
+            border-right: 1px solid #e0e0e0; 
+            overflow-y: auto; 
+            padding: 16px; 
         }
-        canvas {
-            width: 100% !important;
-            height: 100% !important;
-            display: block;
-            touch-action: none;
+        .panel-title { 
+            font-size: 12px; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            color: #666; 
+            margin-bottom: 12px; 
+            font-weight: 600; 
         }
-
-        /* ===== SIDEBAR ===== */
-        #sidebar {
-            width: 25vw;
-            height: 100vh;
-            background-color: #1e1e1e;
-            border-left: 2px solid #2d2d2d;
-            display: flex;
-            flex-direction: column;
-            z-index: 10;
-            box-shadow: -5px 0 25px rgba(0,0,0,0.5);
-            flex-shrink: 0;
-            transition: transform 0.3s ease;
+        .assembly-item { 
+            padding: 10px 12px; 
+            margin-bottom: 6px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            border-left: 3px solid transparent;
         }
-
-        .sidebar-header {
-            padding: 20px 16px;
-            background: linear-gradient(135deg, #0e639c 0%, #064573 100%);
-            font-size: 1.1rem;
-            font-weight: 700;
-            text-align: center;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            border-bottom: 1px solid #1177bb;
+        .assembly-item:hover { background: #f0f0f0; }
+        .assembly-item.active { 
+            background: #e3f2fd; 
+            border-left-color: #2196f3; 
         }
-
-        .section-title {
-            padding: 10px 16px;
-            background-color: #252526;
-            font-size: 0.75rem;
+        .assembly-code { 
+            font-weight: bold; 
+            font-size: 13px; 
+            color: #333; 
+        }
+        .assembly-name { 
+            font-size: 11px; 
+            color: #666; 
+            margin-top: 2px; 
+        }
+        .assembly-page { 
+            font-size: 10px; 
+            color: #999; 
+        }
+        
+        /* Center - 3D Viewer */
+        .viewer-container { 
+            flex: 1; 
+            position: relative; 
+            background: #e8e8e8; 
+        }
+        #three-canvas { width: 100%; height: 100%; }
+        
+        .viewer-controls { 
+            position: absolute; 
+            top: 12px; 
+            right: 12px; 
+            display: flex; 
+            gap: 8px; 
+        }
+        .viewer-btn { 
+            background: white; 
+            border: none; 
+            padding: 8px 14px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+            font-size: 12px; 
+        }
+        .viewer-btn:hover { background: #f5f5f5; }
+        
+        /* Part Popup */
+        .part-popup { 
+            display: none; 
+            position: absolute; 
+            bottom: 20px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            background: white; 
+            padding: 16px 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15); 
+            min-width: 340px; 
+            max-width: 450px; 
+            z-index: 100; 
+        }
+        .part-popup.show { display: block; }
+        .popup-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: start; 
+        }
+        .popup-pos { 
+            background: #e94560; 
+            color: white; 
+            padding: 2px 8px; 
+            border-radius: 4px; 
+            font-size: 11px; 
+            font-weight: bold; 
+        }
+        .popup-close { 
+            background: none; 
+            border: none; 
+            font-size: 20px; 
+            cursor: pointer; 
+            color: #999; 
+        }
+        .popup-name { 
+            margin: 8px 0 4px 0; 
+            font-size: 15px; 
+            color: #1a1a2e; 
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #8e8e8e;
-            border-bottom: 1px solid #2d2d2d;
-            border-top: 1px solid #2d2d2d;
         }
-
-        #parts-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
-            background-color: #1e1e1e;
-            -webkit-overflow-scrolling: touch;
+        .popup-desc { 
+            margin: 0; 
+            font-size: 12px; 
+            color: #666; 
         }
-
-        .part-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: linear-gradient(135deg, #252526 0%, #2a2a2c 100%);
-            margin-bottom: 8px;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid #333333;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            min-height: 52px;
+        .popup-details { 
+            margin-top: 12px; 
+            padding-top: 12px; 
+            border-top: 1px solid #eee; 
+            display: flex; 
+            gap: 20px; 
+            flex-wrap: wrap; 
         }
-
-        .part-item:hover, .part-item:active {
-            border-color: #0e639c;
-            background: linear-gradient(135deg, #2d2d30 0%, #333338 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(14, 99, 156, 0.3);
+        .detail-item {}
+        .detail-label { 
+            font-size: 10px; 
+            color: #999; 
+            text-transform: uppercase; 
         }
-
-        .part-item.active-part {
-            border-color: #0e639c;
-            background: linear-gradient(135deg, #0e2a3f 0%, #1a3a52 100%);
-            box-shadow: 0 0 15px rgba(14, 99, 156, 0.4), inset 0 0 20px rgba(14, 99, 156, 0.1);
+        .detail-value { 
+            margin: 2px 0 0 0; 
+            font-size: 13px; 
+            font-weight: 600; 
+            color: #333; 
         }
-
-        .part-info { display: flex; flex-direction: column; max-width: 72%; }
-        .part-id { font-size: 0.7rem; color: #0e639c; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 2px; }
-        .part-name { font-size: 0.85rem; color: #e0e0e0; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
-
-        .checkbox-container {
-            position: relative;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            padding: 8px;
+        .detail-value.mono { font-family: monospace; }
+        
+        /* Right Panel - Parts Table */
+        .right-panel { 
+            width: 420px; 
+            background: white; 
+            border-left: 1px solid #e0e0e0; 
+            display: flex; 
+            flex-direction: column; 
         }
-        .checkbox-container input { display: none; }
-        .custom-checkbox {
-            width: 22px;
-            height: 22px;
-            border: 2px solid #555;
-            border-radius: 5px;
-            display: inline-block;
-            transition: all 0.2s ease;
-            position: relative;
+        .table-header { 
+            padding: 14px 16px; 
+            border-bottom: 1px solid #e0e0e0; 
         }
-        .checkbox-container input:checked + .custom-checkbox {
-            background-color: #0e639c;
-            border-color: #0e639c;
-            box-shadow: 0 0 8px rgba(14, 99, 156, 0.6);
+        .search-box { 
+            width: 100%; 
+            padding: 8px 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 6px; 
+            font-size: 12px; 
+            margin-top: 8px; 
         }
-        .checkbox-container input:checked + .custom-checkbox::after {
-            content: '✓';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 13px;
-            font-weight: bold;
+        .filter-btns { 
+            display: flex; 
+            gap: 6px; 
+            margin-top: 10px; 
+            flex-wrap: wrap; 
         }
-
-        #cart-container {
-            height: 38vh;
-            background-color: #141414;
-            border-top: 2px solid #2d2d2d;
-            display: flex;
-            flex-direction: column;
+        .filter-btn { 
+            padding: 4px 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            background: white; 
+            font-size: 11px; 
+            cursor: pointer; 
         }
-
-        #cart-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
-            -webkit-overflow-scrolling: touch;
+        .filter-btn.active { 
+            background: #1a1a2e; 
+            color: white; 
+            border-color: #1a1a2e; 
         }
-
-        .cart-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: linear-gradient(135deg, #212121 0%, #252525 100%);
-            padding: 10px 12px;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            border-left: 4px solid #0e639c;
-            border-top: 1px solid #2d2d2d;
-            border-right: 1px solid #2d2d2d;
-            border-bottom: 1px solid #2d2d2d;
-            animation: fadeIn 0.3s ease;
-            min-height: 48px;
+        .table-container { 
+            flex: 1; 
+            overflow-y: auto; 
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 12px; 
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        th { 
+            position: sticky; 
+            top: 0; 
+            background: #f8f9fa; 
+            padding: 10px 12px; 
+            text-align: left; 
+            border-bottom: 2px solid #dee2e6; 
+            font-weight: 600; 
+            color: #495057; 
+            font-size: 10px; 
+            text-transform: uppercase; 
         }
-
-        .qty-controls {
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        td { 
+            padding: 8px 12px; 
+            border-bottom: 1px solid #f0f0f0; 
         }
-
-        .btn-qty {
-            background: linear-gradient(135deg, #2d2d30 0%, #333338 100%);
-            color: #fff;
-            border: 1px solid #444;
-            padding: 6px 12px;
-            cursor: pointer;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-            min-width: 32px;
-            min-height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        tr:hover { background: #f8f9fa; cursor: pointer; }
+        tr.selected { background: #e3f2fd !important; }
+        .part-pos { 
+            font-weight: bold; 
+            color: #e94560; 
         }
-        .btn-qty:hover, .btn-qty:active { background: #0e639c; border-color: #1177bb; box-shadow: 0 0 8px rgba(14, 99, 156, 0.4); }
-
-        .btn-remove {
-            background: linear-gradient(135deg, #4a1515 0%, #5a2020 100%);
-            color: #ff8888;
-            border: 1px solid #662222;
-            padding: 6px 10px;
-            cursor: pointer;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-            min-width: 32px;
-            min-height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .part-num { 
+            font-family: monospace; 
+            font-size: 11px; 
+            color: #666; 
         }
-        .btn-remove:hover, .btn-remove:active { background: #a61c1c; color: #fff; box-shadow: 0 0 8px rgba(166, 28, 28, 0.4); }
-
-        /* ===== TOOLTIP ===== */
-        #tooltip {
-            position: fixed;
-            display: none;
-            background-color: rgba(20, 20, 20, 0.95);
-            border: 2px solid #0e639c;
-            padding: 12px;
-            border-radius: 8px;
-            pointer-events: none;
-            z-index: 100;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            width: 220px;
-            backdrop-filter: blur(4px);
-            max-width: 80vw;
+        .service-badge { 
+            padding: 2px 6px; 
+            border-radius: 3px; 
+            font-size: 10px; 
+            font-weight: 600; 
         }
-
-        #tooltip img {
-            width: 100%;
-            height: auto;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            border: 1px solid #333;
-            background-color: #fff;
+        .sl-2 { background: #fff3e0; color: #e65100; }
+        .sl-3 { background: #e8f5e9; color: #2e7d32; }
+        .sl-4 { background: #e3f2fd; color: #1565c0; }
+        
+        .tooltip { 
+            position: fixed; 
+            background: #333; 
+            color: white; 
+            padding: 6px 10px; 
+            border-radius: 4px; 
+            font-size: 11px; 
+            pointer-events: none; 
+            z-index: 1000; 
+            display: none; 
         }
-
-        .tooltip-title { font-weight: 700; color: #0e639c; font-size: 0.75rem; letter-spacing: 0.5px; }
-        .tooltip-name { font-size: 0.9rem; margin-top: 4px; color: #ffffff; font-weight: 600; }
-
-        /* ===== LOADING ===== */
-        #loading-overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.7);
-            z-index: 50;
-            transition: opacity 0.5s;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #333;
-            border-top: 4px solid #0e639c;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 12px;
-        }
-
-        /* ===== STATUS BAR ===== */
-        #status-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            padding: 16px 20px;
-            pointer-events: none;
-            z-index: 40;
-        }
-
-        #status-text {
-            color: #0e639c;
-            font-weight: 700;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        }
-
-        /* ===== MOBILE MENU BUTTON ===== */
-        #mobile-menu-btn {
-            display: none;
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            z-index: 60;
-            background: linear-gradient(135deg, #0e639c 0%, #064573 100%);
-            color: #fff;
-            border: none;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            transition: all 0.2s;
-        }
-        #mobile-menu-btn:hover, #mobile-menu-btn:active {
-            background: #1177bb;
-            transform: scale(1.05);
-        }
-
-        /* ===== MOBILE CLOSE BUTTON ===== */
-        #mobile-close-btn {
-            display: none;
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            z-index: 70;
-            background: #a61c1c;
-            color: #fff;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-
-        /* ===== OVERLAY FOR MOBILE SIDEBAR ===== */
-        #sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6);
-            z-index: 9;
-        }
-
-        /* ===== RESPONSIVE: TABLET (max-width: 1024px) ===== */
-        @media (max-width: 1024px) {
-            #canvas-container { width: 65vw; }
-            #sidebar { width: 35vw; }
-            .sidebar-header { font-size: 1rem; padding: 16px 12px; }
-            .part-name { font-size: 0.8rem; }
-            .cart-item { font-size: 0.75rem; }
-        }
-
-        /* ===== RESPONSIVE: MOBILE (max-width: 768px) ===== */
-        @media (max-width: 768px) {
-            .wrapper { flex-direction: column; }
-            
-            #canvas-container {
-                width: 100vw;
-                height: 55vh;
-                order: 1;
-            }
-            
-            #sidebar {
-                width: 100vw;
-                height: 45vh;
-                border-left: none;
-                border-top: 2px solid #2d2d2d;
-                order: 2;
-                box-shadow: 0 -5px 25px rgba(0,0,0,0.5);
-            }
-            
-            #mobile-menu-btn { display: none; }
-            
-            .sidebar-header { 
-                font-size: 1rem; 
-                padding: 12px; 
-            }
-            
-            .section-title { 
-                padding: 8px 12px; 
-                font-size: 0.7rem; 
-            }
-            
-            #parts-list { padding: 8px; }
-            
-            .part-item {
-                padding: 8px 10px;
-                margin-bottom: 6px;
-                min-height: 44px;
-            }
-            
-            .part-id { font-size: 0.65rem; }
-            .part-name { font-size: 0.8rem; }
-            
-            .custom-checkbox {
-                width: 24px;
-                height: 24px;
-            }
-            
-            #cart-container { height: 35vh; }
-            #cart-list { padding: 8px; }
-            
-            .cart-item {
-                padding: 8px 10px;
-                font-size: 0.75rem;
-                min-height: 44px;
-            }
-            
-            .btn-qty, .btn-remove {
-                min-width: 36px;
-                min-height: 36px;
-                padding: 8px 12px;
-            }
-            
-            #tooltip {
-                width: 180px;
-                padding: 10px;
-            }
-            
-            #status-bar { padding: 12px 16px; }
-            #status-text { font-size: 0.8rem; }
-        }
-
-        /* ===== RESPONSIVE: SMALL MOBILE (max-width: 480px) ===== */
-        @media (max-width: 480px) {
-            #canvas-container { height: 50vh; }
-            #sidebar { height: 50vh; }
-            
-            .sidebar-header { font-size: 0.9rem; padding: 10px; }
-            .part-name { font-size: 0.75rem; }
-            .cart-item { font-size: 0.7rem; }
-            
-            .btn-qty, .btn-remove {
-                min-width: 32px;
-                min-height: 32px;
-                padding: 6px 10px;
-            }
-        }
-
-        /* ===== LANDSCAPE MOBILE ===== */
-        @media (max-height: 500px) and (orientation: landscape) {
-            .wrapper { flex-direction: row; }
-            #canvas-container { 
-                width: 60vw; 
-                height: 100vh; 
-                order: 1;
-            }
-            #sidebar { 
-                width: 40vw; 
-                height: 100vh; 
-                border-top: none;
-                border-left: 2px solid #2d2d2d;
-                order: 2;
-            }
-        }
-
-        /* ===== SCROLLBAR STYLING ===== */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #1e1e1e; }
-        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #0e639c; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
-
-    <div class="wrapper">
+    <div id="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-logo">W</div>
+            <div>
+                <h1>Weber Alpha Compact</h1>
+                <p>Spare Parts Manual 40006368 | 3D Interactive Viewer</p>
+            </div>
+        </div>
         
-        <div id="canvas-container">
-            <button id="mobile-menu-btn" onclick="toggleSidebar()">☰ Parts</button>
-            <div id="loading-overlay">
-                <div style="text-align:center;">
-                    <div class="spinner"></div>
-                    <div style="color:#0e639c;font-weight:600;letter-spacing:1px;font-size:0.9rem;">LOADING 3D MODEL...</div>
+        <div class="main">
+            <!-- Left: Assembly List -->
+            <div class="left-panel">
+                <div class="panel-title">Assemblies</div>
+                <div id="assembly-list"></div>
+                <div style="margin-top:20px;padding:10px;background:#fff3e0;border-radius:6px;border-left:3px solid #ff9800;">
+                    <p style="margin:0;font-size:11px;color:#e65100;">
+                        <strong>Tip:</strong> Click a part in 3D or table to see PDF details.
+                    </p>
                 </div>
             </div>
-            <div id="status-bar">
-                <div id="status-text">Hover over parts to identify</div>
+            
+            <!-- Center: 3D Viewer -->
+            <div class="viewer-container" id="three-container">
+                <div class="viewer-controls">
+                    <button class="viewer-btn" onclick="resetView()">↺ Reset</button>
+                    <button class="viewer-btn" onclick="toggleWireframe()">Wireframe</button>
+                </div>
+                <div class="part-popup" id="part-popup">
+                    <div class="popup-header">
+                        <div>
+                            <span class="popup-pos" id="popup-pos">Pos. --</span>
+                            <div class="popup-name" id="popup-name">Part Name</div>
+                            <div class="popup-desc" id="popup-desc">Description</div>
+                        </div>
+                        <button class="popup-close" onclick="closePopup()">×</button>
+                    </div>
+                    <div class="popup-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Part Number</div>
+                            <div class="detail-value mono" id="popup-partnum">---</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Qty</div>
+                            <div class="detail-value" id="popup-qty">1</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Service Level</div>
+                            <div class="detail-value" id="popup-level">-</div>
+                        </div>
+                    </div>
+                    <div style="margin-top:10px;padding-top:10px;border-top:1px solid #eee;">
+                        <div class="detail-label">Assembly</div>
+                        <div class="detail-value" id="popup-assembly" style="font-size:12px;color:#555;">---</div>
+                    </div>
+                </div>
             </div>
-            <div id="tooltip">
-                <img id="tooltip-img" src="" alt="Part Image">
-                <div id="tooltip-id" class="tooltip-title">PART NO: </div>
-                <div id="tooltip-name" class="tooltip-name">Part Name</div>
+            
+            <!-- Right: Parts Table -->
+            <div class="right-panel">
+                <div class="table-header">
+                    <div class="panel-title">Spare Parts List</div>
+                    <input type="text" class="search-box" id="search-input" 
+                           placeholder="Search part number or name..." oninput="filterParts()">
+                    <div class="filter-btns" id="filter-btns">
+                        <button class="filter-btn active" onclick="filterByAssembly('all')">All</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Pos</th>
+                                <th>Part Name</th>
+                                <th>Part No.</th>
+                                <th style="text-align:center">Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody id="parts-tbody"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
-
-        <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
-        
-        <div id="sidebar">
-            <button id="mobile-close-btn" onclick="toggleSidebar()">✕ Close</button>
-            <div class="sidebar-header">ALPHA COMPACT INDUSTRIAL</div>
-            
-            <div class="section-title">Available Parts (Hover/Select)</div>
-            <div id="parts-list"></div>
-            
-            <div class="section-title">Selected Parts List (Cart)</div>
-            <div id="cart-container">
-                <div id="cart-list"></div>
-            </div>
-        </div>
-
     </div>
+    
+    <div class="tooltip" id="tooltip"></div>
 
-    <script>
-        // ===== MOBILE SIDEBAR TOGGLE =====
-        let sidebarOpen = false;
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            const menuBtn = document.getElementById('mobile-menu-btn');
-            const closeBtn = document.getElementById('mobile-close-btn');
-            
-            if (window.innerWidth <= 768) {
-                sidebarOpen = !sidebarOpen;
-                if (sidebarOpen) {
-                    sidebar.style.transform = 'translateY(0)';
-                    overlay.style.display = 'block';
-                    menuBtn.style.display = 'none';
-                    closeBtn.style.display = 'block';
-                } else {
-                    sidebar.style.transform = 'translateY(100%)';
-                    overlay.style.display = 'none';
-                    menuBtn.style.display = 'block';
-                    closeBtn.style.display = 'none';
-                }
-            }
-        }
+<script>
+// ===== DATA FROM PDF MANUAL 40006368 =====
+const assemblies = {
+    'A': { name: 'Chassis Alpha Compact', page: '7-9', color: 0x4a90d9 },
+    'B': { name: 'Transport / Transportstation', page: '10-12', color: 0xe74c3c },
+    'C': { name: 'Rewinder', page: '13-15', color: 0x2ecc71 },
+    'D1': { name: 'Dispensing 120mm', page: '16-18', color: 0xf39c12 },
+    'D2': { name: 'Dispensing 150mm', page: '19-21', color: 0xe67e22 },
+    'D3': { name: 'Pneumatic Peeler Plate', page: '22-25', color: 0xd35400 },
+    'E': { name: 'Unwinder', page: '26-29', color: 0x9b59b6 },
+    'F': { name: 'Label Guiding', page: '30-32', color: 0x1abc9c },
+    'G1': { name: 'Label Detection "Oguti"', page: '33-34', color: 0x3498db },
+    'G2': { name: 'Label Detection "USGT"', page: '35-36', color: 0x2980b9 },
+    'H': { name: 'Clamp', page: '37-38', color: 0x34495e },
+    'I': { name: 'Options', page: '39-45', color: 0x16a085 },
+    'J': { name: 'Tamp Blow 250', page: '46-52', color: 0xc0392b },
+    'K': { name: 'Swing Arm 90°-180°', page: '53-60', color: 0x8e44ad },
+    'L': { name: 'Applicator HS50+HS100', page: '61-63', color: 0x27ae60 },
+    'M': { name: 'Applicator KH100-400', page: '64-66', color: 0x2c3e50 }
+};
 
-        function initMobileSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const menuBtn = document.getElementById('mobile-menu-btn');
-            const closeBtn = document.getElementById('mobile-close-btn');
-            
-            if (window.innerWidth <= 768) {
-                sidebar.style.position = 'fixed';
-                sidebar.style.bottom = '0';
-                sidebar.style.left = '0';
-                sidebar.style.right = '0';
-                sidebar.style.height = '60vh';
-                sidebar.style.zIndex = '20';
-                sidebar.style.borderTop = '2px solid #2d2d2d';
-                sidebar.style.borderLeft = 'none';
-                sidebar.style.transform = 'translateY(100%)';
-                sidebar.style.transition = 'transform 0.3s ease';
-                menuBtn.style.display = 'block';
-                closeBtn.style.display = 'none';
-                sidebarOpen = false;
-            } else {
-                sidebar.style.position = '';
-                sidebar.style.bottom = '';
-                sidebar.style.left = '';
-                sidebar.style.right = '';
-                sidebar.style.height = '';
-                sidebar.style.zIndex = '';
-                sidebar.style.borderTop = '';
-                sidebar.style.borderLeft = '';
-                sidebar.style.transform = '';
-                menuBtn.style.display = 'none';
-                closeBtn.style.display = 'none';
-                document.getElementById('sidebar-overlay').style.display = 'none';
-                sidebarOpen = false;
-            }
-        }
+// [Include the full partsData array from the widget above here]
+const partsData = [ /* ... paste full partsData from widget ... */ ];
 
-        // ===== PARTS DATA =====
-        const masterSparePartsCatalog = {
-            "BAUGRUPPE_A_CHASSIS": [
-                { id: "40003272", name: "Cover with controller LH", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Cover+LH" },
-                { id: "40003271", name: "Cover with controller RH", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Cover+RH" },
-                { id: "32912434", name: "Deckel Alpha Compact Base", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Deckel+Alpha" },
-                { id: "32910047", name: "Plate connector assignment LH", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Plate+LH" },
-                { id: "32910036", name: "Plate connector assignment RH", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Plate+RH" },
-                { id: "40003268", name: "Power pack Base LH Unit", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Power+Pack+LH" },
-                { id: "40003269", name: "Power pack Base RH Unit", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Power+Pack+RH" },
-                { id: "33016858", name: "CPU/IO-Board System controller", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=CPU+IO+Board" },
-                { id: "33016788", name: "Motor-Board Drive controller", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Motor+Board" },
-                { id: "32909028", name: "Main switch / Geräteschalter", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Main+Switch" }
-            ],
-            "BAUGRUPPE_B_TRANSPORT": [
-                { id: "32901023", name: "Drive roller corund 120mm", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Corund+120mm" },
-                { id: "32901027", name: "Drive roller rubber 120mm", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Rubber+120mm" },
-                { id: "32901024", name: "Drive roller corund 150mm", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Corund+150mm" },
-                { id: "32901028", name: "Drive roller rubber 150mm", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Rubber+150mm" },
-                { id: "33001631", name: "Timing belt / Zahnriemen Drive", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Timing+Belt" },
-                { id: "33001636", name: "Zahnriemenrad / Pulley 14-T5", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Pulley+14-T5" },
-                { id: "33016851", name: "Main Step Motor Drive", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Main+Motor" },
-                { id: "35001958", name: "Eingreifschutz / Hand protection", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Hand+Protection" }
-            ],
-            "BAUGRUPPE_C_REWINDER": [
-                { id: "35001797", name: "Dancer complete system / Tänzer", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Dancer+Arm" },
-                { id: "35001777", name: "Rewinder shaft 120mm Core", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Rewind+Shaft+120" },
-                { id: "35001926", name: "Rewinder shaft 150mm Core", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Rewind+Shaft+150" },
-                { id: "33005257", name: "Rundriemen / Round belt drive", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Round+Belt" },
-                { id: "32907671", name: "Aufspullteller / Rewinder plate", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Rewinder+Plate" },
-                { id: "32911430", name: "Aufspulkern / Rewind core unit", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Rewind+Core" }
-            ],
-            "BAUGRUPPE_D_UNWINDER_AND_SENSORS": [
-                { id: "35002061", name: "Unwinder arm 120mm LH Component", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Unwind+Arm+120LH" },
-                { id: "35001873", name: "Unwinder arm 120mm RH Component", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Unwind+Arm+120RH" },
-                { id: "33001934", name: "Abspulkern 3\" / Unwind core roll", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Unwind+Core+3" },
-                { id: "33010487", name: "Bremsband / Friction brake belt", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Brake+Belt" },
-                { id: "33090245", name: "Label sensor OGUTI Fixed Element", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=OGUTI+Sensor" },
-                { id: "33010671", name: "Label sensor USGT Ultrasonic Block", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=USGT+Sensor" },
-                { id: "33001556", name: "Klemmstück / Clamp fixing block", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Clamp+Block" }
-            ]
-        };
+// ===== THREE.JS SETUP =====
+let scene, camera, renderer, controls, raycaster, mouse;
+let parts3D = []; // Store 3D part meshes
+let selectedPart = null;
+let wireframeMode = false;
 
-        let partDatabase = {};
-        let selectedPartsCart = {};
-        let independentMeshRegistry = [];
-        let meshToPartMap = new Map();
-        let originalMaterials = new Map();
-        let hoveredPartId = null;
+function initThree() {
+    const container = document.getElementById('three-container');
+    
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xe8e8e8);
+    
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(15, 10, 20);
+    
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.shadowMap.enabled = true;
+    container.insertBefore(renderer.domElement, container.firstChild);
+    
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 20, 15);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+    
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    fillLight.position.set(-10, 5, -10);
+    scene.add(fillLight);
+    
+    // Controls
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.target.set(0, 2, 0);
+    
+    // Raycaster for clicking
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
+    
+    // Create placeholder geometry for each assembly
+    createPlaceholderGeometry();
+    
+    // Load GLB if available
+    loadGLBModel();
+    
+    // Events
+    renderer.domElement.addEventListener('click', onMouseClick);
+    renderer.domElement.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('resize', onWindowResize);
+    
+    animate();
+}
 
-        let globalCounter = 1;
-        for (const [groupName, items] of Object.entries(masterSparePartsCatalog)) {
-            items.forEach((item) => {
-                let generatedKey = "Isolated_Mesh_ID_" + String(globalCounter).padStart(3, '0');
-                partDatabase[generatedKey] = {
-                    id: item.id,
-                    name: item.name,
-                    img: item.img,
-                    group: groupName
-                };
-                globalCounter++;
-            });
-        }
-
-        const partsListUI = document.getElementById('parts-list');
-        for (const [uniqueId, info] of Object.entries(partDatabase)) {
-            const item = document.createElement('div');
-            item.className = 'part-item';
-            item.id = `part-item-${uniqueId}`;
-            item.innerHTML = `
-                <div class="part-info">
-                    <span class="part-id">P/N: ${info.id}</span>
-                    <span class="part-name">${info.name}</span>
-                </div>
-                <label class="checkbox-container">
-                    <input type="checkbox" id="check-${uniqueId}" onchange="togglePart('${uniqueId}', this.checked)">
-                    <span class="custom-checkbox"></span>
-                </label>
-            `;
-            item.addEventListener('mouseenter', () => highlightMeshById(uniqueId, true));
-            item.addEventListener('mouseleave', () => highlightMeshById(uniqueId, false));
-            item.addEventListener('click', (e) => {
-                if (!e.target.closest('.checkbox-container')) {
-                    const cb = document.getElementById(`check-${uniqueId}`);
-                    cb.checked = !cb.checked;
-                    togglePart(uniqueId, cb.checked);
-                }
-            });
-            partsListUI.appendChild(item);
-        }
-
-        function togglePart(uniqueId, isChecked) {
-            const itemEl = document.getElementById(`part-item-${uniqueId}`);
-            if (isChecked) {
-                if (!selectedPartsCart[uniqueId]) selectedPartsCart[uniqueId] = 1;
-                itemEl.classList.add('active-part');
-            } else {
-                delete selectedPartsCart[uniqueId];
-                itemEl.classList.remove('active-part');
-            }
-            updateCartUI();
-        }
-
-        function adjustQty(uniqueId, change) {
-            if (selectedPartsCart[uniqueId]) {
-                selectedPartsCart[uniqueId] += change;
-                if (selectedPartsCart[uniqueId] <= 0) {
-                    delete selectedPartsCart[uniqueId];
-                    const cb = document.getElementById(`check-${uniqueId}`);
-                    if(cb) cb.checked = false;
-                    document.getElementById(`part-item-${uniqueId}`).classList.remove('active-part');
-                }
-                updateCartUI();
-            }
-        }
-
-        function removePart(uniqueId) {
-            delete selectedPartsCart[uniqueId];
-            const cb = document.getElementById(`check-${uniqueId}`);
-            if(cb) cb.checked = false;
-            document.getElementById(`part-item-${uniqueId}`).classList.remove('active-part');
-            updateCartUI();
-        }
-
-        function updateCartUI() {
-            const cartListUI = document.getElementById('cart-list');
-            cartListUI.innerHTML = '';
-            
-            if (Object.keys(selectedPartsCart).length === 0) {
-                cartListUI.innerHTML = '<div style="text-align:center;color:#666;padding:20px;font-style:italic;">No parts selected</div>';
-                return;
-            }
-            
-            for (const [uniqueId, qty] of Object.entries(selectedPartsCart)) {
-                const info = partDatabase[uniqueId];
-                const item = document.createElement('div');
-                item.className = 'cart-item';
-                item.innerHTML = `
-                    <div style="display:flex; flex-direction:column; max-width:55%;">
-                        <span style="font-weight:700; font-size:0.75rem; color:#0e639c;">${info.id}</span>
-                        <span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-weight:600; color:#fff;">${info.name}</span>
-                    </div>
-                    <div class="qty-controls">
-                        <button class="btn-qty" onclick="adjustQty('${uniqueId}', -1)">−</button>
-                        <span style="font-weight:700; min-width:20px; text-align:center; color:#fff;">${qty}</span>
-                        <button class="btn-qty" onclick="adjustQty('${uniqueId}', 1)">+</button>
-                        <button class="btn-remove" onclick="removePart('${uniqueId}')">✕</button>
-                    </div>
-                `;
-                cartListUI.appendChild(item);
-            }
-        }
-
-        updateCartUI();
-
-        // ===== THREE.JS SETUP =====
-        const container = document.getElementById('canvas-container');
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a1a1a);
-        scene.fog = new THREE.FogExp2(0x1a1a1a, 0.015);
-
-        const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(20, 15, 35);
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        container.appendChild(renderer.domElement);
-
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.maxDistance = 100;
-        controls.minDistance = 5;
-        controls.enablePan = true;
-        controls.enableZoom = true;
-        controls.touchAction = 'none';
-
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-
-        const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        mainLight.position.set(20, 40, 20);
-        mainLight.castShadow = true;
-        mainLight.shadow.mapSize.width = 2048;
-        mainLight.shadow.mapSize.height = 2048;
-        mainLight.shadow.bias = -0.0001;
-        scene.add(mainLight);
-
-        const fillLight = new THREE.DirectionalLight(0x90b0ff, 0.4);
-        fillLight.position.set(-20, 20, -20);
-        scene.add(fillLight);
-
-        const rimLight = new THREE.PointLight(0xffffff, 0.6, 50);
-        rimLight.position.set(0, 20, 0);
-        scene.add(rimLight);
-
-        const accentLight = new THREE.PointLight(0x0e639c, 0.3, 30);
-        accentLight.position.set(15, 5, 15);
-        scene.add(accentLight);
-
-        const gridHelper = new THREE.GridHelper(100, 50, 0x333333, 0x222222);
-        gridHelper.position.y = -5;
-        scene.add(gridHelper);
-
-        const filename = "32100033_A_Comp_120_RH.step.glb";
-        const loader = new THREE.GLTFLoader();
-        let loadedModel;
-        
-        const professionalMaterialPalette = [
-            { color: 0xf5f5f5, roughness: 0.4, metalness: 0.05 },
-            { color: 0xe8e8e8, roughness: 0.35, metalness: 0.1 },
-            { color: 0xdddddd, roughness: 0.3, metalness: 0.15 },
-            { color: 0xd0d0d0, roughness: 0.4, metalness: 0.1 },
-            { color: 0xc0c0c0, roughness: 0.25, metalness: 0.75 },
-            { color: 0xb0b0b0, roughness: 0.2, metalness: 0.8 },
-            { color: 0xa0a0a0, roughness: 0.3, metalness: 0.7 },
-            { color: 0x909090, roughness: 0.25, metalness: 0.75 },
-            { color: 0x808080, roughness: 0.35, metalness: 0.85 },
-            { color: 0x707070, roughness: 0.3, metalness: 0.9 },
-            { color: 0x606060, roughness: 0.25, metalness: 0.85 },
-            { color: 0x505050, roughness: 0.35, metalness: 0.8 },
-            { color: 0x333333, roughness: 0.6, metalness: 0.1 },
-            { color: 0x2a2a2a, roughness: 0.55, metalness: 0.15 },
-            { color: 0x222222, roughness: 0.5, metalness: 0.2 },
-            { color: 0x1a1a1a, roughness: 0.65, metalness: 0.05 },
-            { color: 0x3d7ea6, roughness: 0.4, metalness: 0.2 },
-            { color: 0x4a8ab0, roughness: 0.35, metalness: 0.25 },
-            { color: 0xb03030, roughness: 0.35, metalness: 0.3 },
-            { color: 0xcc4040, roughness: 0.3, metalness: 0.25 },
-            { color: 0x3a8a3a, roughness: 0.35, metalness: 0.2 },
-            { color: 0x4a9a4a, roughness: 0.3, metalness: 0.25 },
-            { color: 0xc4a030, roughness: 0.4, metalness: 0.15 },
-            { color: 0xd4b040, roughness: 0.35, metalness: 0.2 },
-            { color: 0xc07030, roughness: 0.4, metalness: 0.2 },
-            { color: 0xd08040, roughness: 0.35, metalness: 0.25 },
-            { color: 0x8a6a9a, roughness: 0.45, metalness: 0.1 },
-            { color: 0x9a7aaa, roughness: 0.4, metalness: 0.15 },
-            { color: 0x8b6b4b, roughness: 0.7, metalness: 0.05 },
-            { color: 0x9a7b5b, roughness: 0.65, metalness: 0.1 },
-            { color: 0xe0d8c8, roughness: 0.4, metalness: 0.05 },
-            { color: 0xd0c8b8, roughness: 0.35, metalness: 0.1 },
-            { color: 0xd8d8d8, roughness: 0.15, metalness: 0.95 },
-            { color: 0xe0e0e0, roughness: 0.1, metalness: 0.95 },
-            { color: 0xc8c8c8, roughness: 0.2, metalness: 0.9 },
-            { color: 0xb8b8b8, roughness: 0.15, metalness: 0.92 },
-            { color: 0xa8a8a8, roughness: 0.2, metalness: 0.88 },
-            { color: 0x989898, roughness: 0.25, metalness: 0.85 }
-        ];
-        
-        loader.load(filename, function (gltf) {
-            loadedModel = gltf.scene;
-            
-            const box = new THREE.Box3().setFromObject(loadedModel);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-            
-            loadedModel.position.x = -center.x;
-            loadedModel.position.y = -center.y + 15;
-            loadedModel.position.z = -center.z;
-            
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 25 / maxDim;
-            loadedModel.scale.set(scale, scale, scale);
-            
-            let databaseKeys = Object.keys(partDatabase);
-            let keyIndex = 0;
-            
-            loadedModel.traverse((node) => {
-                if (node.isMesh) {
-                    if (node.material) {
-                        const originalMat = node.material.clone();
-                        originalMaterials.set(node.uuid, originalMat);
-                        
-                        const matConfig = professionalMaterialPalette[keyIndex % professionalMaterialPalette.length];
-                        
-                        node.material = new THREE.MeshStandardMaterial({
-                            color: matConfig.color,
-                            roughness: matConfig.roughness,
-                            metalness: matConfig.metalness,
-                            envMapIntensity: 1.0
-                        });
-                        
-                        node.castShadow = true;
-                        node.receiveShadow = true;
-                    }
-                    
-                    let finalAssignedKey = databaseKeys[keyIndex % databaseKeys.length];
-                    node.name = finalAssignedKey;
-                    meshToPartMap.set(node.uuid, finalAssignedKey);
-                    
-                    independentMeshRegistry.push(node);
-                    keyIndex++;
-                }
-            });
-
-            scene.add(loadedModel);
-            
-            document.getElementById('loading-overlay').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('loading-overlay').style.display = 'none';
-            }, 500);
-            
-            document.getElementById('status-text').innerText = 'Click parts to select | Drag to rotate | Scroll to zoom';
-            
-        }, undefined, function(error) {
-            console.error('Error loading model:', error);
-            document.getElementById('loading-overlay').innerHTML = `
-                <div style="text-align:center;color:#ff4444;">
-                    <div style="font-size:2rem;margin-bottom:10px;">⚠️</div>
-                    <div style="font-weight:600;">Model not found</div>
-                    <div style="font-size:0.85rem;color:#888;margin-top:5px;">Please ensure "${filename}" is available</div>
-                </div>
-            `;
+function createPlaceholderGeometry() {
+    // Create simplified geometry representing each assembly area
+    const assemblyPositions = {
+        'A': { pos: [0, 3, 0], size: [4, 3, 2] },      // Chassis - center
+        'B': { pos: [0, 1, 2], size: [3, 1.5, 1.5] },  // Transport - front
+        'C': { pos: [-3, 2, -1], size: [1.5, 2, 1.5] }, // Rewinder - left back
+        'D': { pos: [0, 0.5, 4], size: [3, 0.5, 2] },   // Dispensing - front bottom
+        'E': { pos: [3, 4, -2], size: [2, 2, 2] },      // Unwinder - right top back
+        'F': { pos: [0, 2.5, 1], size: [2.5, 0.3, 1] }, // Label guide - middle
+        'G': { pos: [0, 2, 3], size: [1, 0.5, 0.5] },   // Sensor - front
+        'H': { pos: [0, 0, 0], size: [1, 1, 1] },       // Clamp - bottom
+        'I': { pos: [2, 1, 2], size: [1, 1, 1] },       // Options - right
+        'J': { pos: [0, 6, 0], size: [2, 4, 2] },       // Tamp blow - top
+        'K': { pos: [-2, 5, 0], size: [2, 3, 2] },      // Swing arm - left top
+        'L': { pos: [2, 5, 0], size: [1.5, 3, 1.5] },   // HS applicator - right top
+        'M': { pos: [2, 6, 0], size: [1, 4, 1] }        // KH applicator - far right
+    };
+    
+    Object.keys(assemblyPositions).forEach(key => {
+        const ap = assemblyPositions[key];
+        const geometry = new THREE.BoxGeometry(...ap.size);
+        const material = new THREE.MeshPhongMaterial({ 
+            color: assemblies[key]?.color || 0x888888,
+            transparent: true,
+            opacity: 0.7
         });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(...ap.pos);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.userData = { assembly: key, isAssembly: true };
+        scene.add(mesh);
+        parts3D.push(mesh);
+        
+        // Add wireframe edges
+        const edges = new THREE.EdgesGeometry(geometry);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x333333 }));
+        mesh.add(line);
+    });
+    
+    // Ground plane
+    const groundGeo = new THREE.PlaneGeometry(30, 30);
+    const groundMat = new THREE.MeshPhongMaterial({ color: 0xcccccc });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -1;
+    ground.receiveShadow = true;
+    scene.add(ground);
+    
+    // Grid
+    const grid = new THREE.GridHelper(30, 30, 0x999999, 0xcccccc);
+    grid.position.y = -0.9;
+    scene.add(grid);
+}
 
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        const tooltip = document.getElementById('tooltip');
-        const tooltipImg = document.getElementById('tooltip-img');
-        const tooltipId = document.getElementById('tooltip-id');
-        const tooltipName = document.getElementById('tooltip-name');
-        let currentActiveMesh = null;
-
-        window.addEventListener('mousemove', onMouseMove, false);
-        window.addEventListener('click', onModelClick, false);
-
-        function highlightMeshById(partId, highlight) {
-            for (const mesh of independentMeshRegistry) {
-                if (mesh.name === partId) {
-                    if (highlight) {
-                        mesh.material.emissive.setHex(0x0e639c);
-                        mesh.material.emissiveIntensity = 0.5;
-                    } else {
-                        if (selectedPartsCart[partId]) {
-                            mesh.material.emissive.setHex(0x0e639c);
-                            mesh.material.emissiveIntensity = 0.3;
-                        } else {
-                            mesh.material.emissive.setHex(0x000000);
-                            mesh.material.emissiveIntensity = 0;
-                        }
-                    }
-                }
+function loadGLBModel() {
+    const loader = new THREE.GLTFLoader();
+    const filename = "32100033_A_Comp_120_RH.step.glb";
+    
+    loader.load(filename, function(gltf) {
+        const model = gltf.scene;
+        
+        // Center model
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center);
+        
+        // Scale to fit
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 10 / maxDim;
+        model.scale.setScalar(scale);
+        
+        // Hide placeholder geometry
+        parts3D.forEach(p => p.visible = false);
+        
+        // Add model parts to raycasting
+        model.traverse((child) => {
+            if (child.isMesh) {
+                child.userData.isModelPart = true;
+                parts3D.push(child);
             }
-        }
+        });
+        
+        scene.add(model);
+        console.log("GLB Model loaded successfully!");
+    }, undefined, function(error) {
+        console.log("GLB not found, using placeholder geometry");
+    });
+}
 
-        function onMouseMove(event) {
-            const rect = renderer.domElement.getBoundingClientRect();
-            
-            if (event.clientX < rect.left || event.clientX > rect.right || 
-                event.clientY < rect.top || event.clientY > rect.bottom) {
-                if (currentActiveMesh) {
-                    const partId = meshToPartMap.get(currentActiveMesh.uuid);
-                    if (!selectedPartsCart[partId]) {
-                        currentActiveMesh.material.emissive.setHex(0x000000);
-                        currentActiveMesh.material.emissiveIntensity = 0;
-                    } else {
-                        currentActiveMesh.material.emissive.setHex(0x0e639c);
-                        currentActiveMesh.material.emissiveIntensity = 0.3;
-                    }
-                    currentActiveMesh = null;
-                }
-                tooltip.style.display = 'none';
-                document.getElementById('status-text').innerText = 'Click parts to select | Drag to rotate | Scroll to zoom';
-                return;
-            }
-            
-            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-            let tooltipX = event.clientX + 20;
-            let tooltipY = event.clientY + 20;
-            if (tooltipX + 240 > window.innerWidth) tooltipX = event.clientX - 260;
-            if (tooltipY + 150 > window.innerHeight) tooltipY = event.clientY - 160;
-            
-            tooltip.style.left = tooltipX + 'px';
-            tooltip.style.top = tooltipY + 'px';
-
-            if (independentMeshRegistry.length > 0) {
-                raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(independentMeshRegistry, false);
-
-                if (intersects.length > 0) {
-                    const hitMesh = intersects[0].object;
-                    const partId = meshToPartMap.get(hitMesh.uuid);
-                    
-                    if (partId && partDatabase[partId]) {
-                        if (currentActiveMesh !== hitMesh) {
-                            if (currentActiveMesh) {
-                                const prevId = meshToPartMap.get(currentActiveMesh.uuid);
-                                if (!selectedPartsCart[prevId]) {
-                                    currentActiveMesh.material.emissive.setHex(0x000000);
-                                    currentActiveMesh.material.emissiveIntensity = 0;
-                                } else {
-                                    currentActiveMesh.material.emissive.setHex(0x0e639c);
-                                    currentActiveMesh.material.emissiveIntensity = 0.3;
-                                }
-                            }
-                            
-                            currentActiveMesh = hitMesh;
-                            hitMesh.material.emissive.setHex(0x0e639c);
-                            hitMesh.material.emissiveIntensity = 0.6;
-
-                            const pInfo = partDatabase[partId];
-                            tooltipImg.src = pInfo.img;
-                            tooltipId.innerText = "PART NO: " + pInfo.id;
-                            tooltipName.innerText = pInfo.name;
-                            tooltip.style.display = 'block';
-                            
-                            document.getElementById('status-text').innerText = `${pInfo.id} - ${pInfo.name}`;
-                            
-                            if (hoveredPartId !== partId) {
-                                if (hoveredPartId) {
-                                    const prevItem = document.getElementById(`part-item-${hoveredPartId}`);
-                                    if (prevItem && !selectedPartsCart[hoveredPartId]) prevItem.style.borderColor = '#333333';
-                                }
-                                hoveredPartId = partId;
-                                const currItem = document.getElementById(`part-item-${partId}`);
-                                if (currItem) {
-                                    currItem.style.borderColor = '#0e639c';
-                                    currItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    if (currentActiveMesh) {
-                        const prevId = meshToPartMap.get(currentActiveMesh.uuid);
-                        if (!selectedPartsCart[prevId]) {
-                            currentActiveMesh.material.emissive.setHex(0x000000);
-                            currentActiveMesh.material.emissiveIntensity = 0;
-                        } else {
-                            currentActiveMesh.material.emissive.setHex(0x0e639c);
-                            currentActiveMesh.material.emissiveIntensity = 0.3;
-                        }
-                        currentActiveMesh = null;
-                    }
-                    tooltip.style.display = 'none';
-                    document.getElementById('status-text').innerText = 'Click parts to select | Drag to rotate | Scroll to zoom';
-                    
-                    if (hoveredPartId) {
-                        const prevItem = document.getElementById(`part-item-${hoveredPartId}`);
-                        if (prevItem && !selectedPartsCart[hoveredPartId]) prevItem.style.borderColor = '#333333';
-                        hoveredPartId = null;
-                    }
-                }
-            }
-        }
-
-        function onModelClick(event) {
-            const rect = renderer.domElement.getBoundingClientRect();
-            if (event.clientX > rect.right || event.clientX < rect.left || 
-                event.clientY > rect.bottom || event.clientY < rect.top) {
-                return;
-            }
-
-            if (independentMeshRegistry.length > 0) {
-                raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(independentMeshRegistry, false);
-
-                if (intersects.length > 0) {
-                    const hitMesh = intersects[0].object;
-                    const uniqueId = meshToPartMap.get(hitMesh.uuid);
-                    
-                    if (uniqueId && partDatabase[uniqueId]) {
-                        const cb = document.getElementById(`check-${uniqueId}`);
-                        if (cb) {
-                            cb.checked = !cb.checked;
-                            togglePart(uniqueId, cb.checked);
-                            
-                            hitMesh.material.emissive.setHex(0xffffff);
-                            hitMesh.material.emissiveIntensity = 1.0;
-                            setTimeout(() => {
-                                if (cb.checked) {
-                                    hitMesh.material.emissive.setHex(0x0e639c);
-                                    hitMesh.material.emissiveIntensity = 0.3;
-                                } else {
-                                    hitMesh.material.emissive.setHex(0x000000);
-                                    hitMesh.material.emissiveIntensity = 0;
-                                }
-                            }, 200);
-                        }
-                    }
-                }
-            }
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        // ===== RESPONSIVE RESIZE =====
-        function onWindowResize() {
-            const w = container.clientWidth;
-            const h = container.clientHeight;
-            camera.aspect = w / h;
-            camera.updateProjectionMatrix();
-            renderer.setSize(w, h);
-            
-            // Re-init mobile sidebar on resize
-            initMobileSidebar();
+function onMouseClick(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(parts3D, true);
+    
+    if (intersects.length > 0) {
+        const object = intersects[0].object;
+        let assembly = object.userData.assembly;
+        
+        // If clicked model part, find nearest assembly
+        if (object.userData.isModelPart) {
+            // Try to match by position or use default
+            assembly = findNearestAssembly(object.position);
         }
         
-        window.addEventListener('resize', onWindowResize, false);
+        if (assembly) {
+            highlightAssembly(assembly);
+            showAssemblyParts(assembly);
+        }
+    }
+}
+
+function findNearestAssembly(pos) {
+    // Simple distance-based matching
+    let nearest = 'A';
+    let minDist = Infinity;
+    
+    const centers = {
+        'A': new THREE.Vector3(0, 3, 0),
+        'B': new THREE.Vector3(0, 1, 2),
+        'C': new THREE.Vector3(-3, 2, -1),
+        'D': new THREE.Vector3(0, 0.5, 4),
+        'E': new THREE.Vector3(3, 4, -2),
+        'F': new THREE.Vector3(0, 2.5, 1),
+        'G': new THREE.Vector3(0, 2, 3),
+        'H': new THREE.Vector3(0, 0, 0),
+        'I': new THREE.Vector3(2, 1, 2),
+        'J': new THREE.Vector3(0, 6, 0),
+        'K': new THREE.Vector3(-2, 5, 0),
+        'L': new THREE.Vector3(2, 5, 0),
+        'M': new THREE.Vector3(2, 6, 0)
+    };
+    
+    Object.keys(centers).forEach(key => {
+        const dist = pos.distanceTo(centers[key]);
+        if (dist < minDist) {
+            minDist = dist;
+            nearest = key;
+        }
+    });
+    
+    return nearest;
+}
+
+function onMouseMove(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(parts3D, true);
+    
+    const tooltip = document.getElementById('tooltip');
+    if (intersects.length > 0) {
+        const obj = intersects[0].object;
+        const assembly = obj.userData.assembly || findNearestAssembly(obj.position);
+        if (assembly && assemblies[assembly]) {
+            tooltip.style.display = 'block';
+            tooltip.style.left = event.clientX + 10 + 'px';
+            tooltip.style.top = event.clientY + 10 + 'px';
+            tooltip.textContent = assemblies[assembly].name;
+            renderer.domElement.style.cursor = 'pointer';
+        }
+    } else {
+        tooltip.style.display = 'none';
+        renderer.domElement.style.cursor = 'default';
+    }
+}
+
+function highlightAssembly(assemblyKey) {
+    // Reset all
+    parts3D.forEach(p => {
+        if (p.material) {
+            p.material.emissive = new THREE.Color(0x000000);
+        }
+    });
+    
+    // Highlight selected assembly parts
+    parts3D.forEach(p => {
+        const pAssembly = p.userData.assembly || 
+            (p.userData.isModelPart ? findNearestAssembly(p.position) : null);
+        if (pAssembly === assemblyKey && p.material) {
+            p.material.emissive = new THREE.Color(0x444444);
+        }
+    });
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+function onWindowResize() {
+    const container = document.getElementById('three-container');
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+}
+
+function resetView() {
+    camera.position.set(15, 10, 20);
+    controls.target.set(0, 2, 0);
+    controls.update();
+}
+
+function toggleWireframe() {
+    wireframeMode = !wireframeMode;
+    parts3D.forEach(p => {
+        if (p.material) {
+            p.material.wireframe = wireframeMode;
+        }
+    });
+}
+
+// ===== UI FUNCTIONS =====
+let currentFilter = 'all';
+
+function initUI() {
+    // Build assembly list
+    const alist = document.getElementById('assembly-list');
+    Object.keys(assemblies).forEach(key => {
+        const item = document.createElement('div');
+        item.className = 'assembly-item';
+        item.dataset.assembly = key;
+        item.innerHTML = `
+            <div class="assembly-code">${key}</div>
+            <div class="assembly-name">${assemblies[key].name}</div>
+            <div class="assembly-page">Page ${assemblies[key].page}</div>
+        `;
+        item.onclick = () => {
+            document.querySelectorAll('.assembly-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            filterByAssembly(key);
+            highlightAssembly(key);
+        };
+        alist.appendChild(item);
+    });
+    
+    // Build filter buttons
+    const fbtns = document.getElementById('filter-btns');
+    Object.keys(assemblies).forEach(key => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn';
+        btn.textContent = key;
+        btn.onclick = function() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            filterByAssembly(key);
+        };
+        fbtns.appendChild(btn);
+    });
+    
+    renderTable(partsData);
+}
+
+function renderTable(data) {
+    const tbody = document.getElementById('parts-tbody');
+    tbody.innerHTML = '';
+    
+    data.forEach((part, idx) => {
+        const row = document.createElement('tr');
+        row.dataset.index = idx;
+        row.onclick = () => selectPart(part, row);
         
-        // Init mobile sidebar on load
-        initMobileSidebar();
-    </script>
+        const slClass = part.serviceLevel === 2 ? 'sl-2' : 
+                       part.serviceLevel === 3 ? 'sl-3' : 
+                       part.serviceLevel === 4 ? 'sl-4' : '';
+        const slText = part.serviceLevel !== '-' ? `SL${part.serviceLevel}` : '-';
+        
+        row.innerHTML = `
+            <td class="part-pos">${part.pos}</td>
+            <td>${part.name}<br><span style="font-size:10px;color:#999">${part.desc}</span></td>
+            <td class="part-num">${part.partNum}</td>
+            <td style="text-align:center">
+                ${part.qty}
+                <span class="service-badge ${slClass}" style="margin-left:4px">${slText}</span>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function selectPart(part, rowElement) {
+    // Highlight row
+    document.querySelectorAll('#parts-tbody tr').forEach(r => r.classList.remove('selected'));
+    if (rowElement) rowElement.classList.add('selected');
+    
+    // Show popup
+    const popup = document.getElementById('part-popup');
+    document.getElementById('popup-pos').textContent = 'Pos. ' + part.pos;
+    document.getElementById('popup-name').textContent = part.name;
+    document.getElementById('popup-desc').textContent = part.desc;
+    document.getElementById('popup-partnum').textContent = part.partNum;
+    document.getElementById('popup-qty').textContent = part.qty;
+    
+    const slColors = { 2: '#e65100', 3: '#2e7d32', 4: '#1565c0' };
+    const slText = part.serviceLevel !== '-' ? 
+        `<span style="background:${slColors[part.serviceLevel]||'#999'};color:white;padding:2px 8px;border-radius:4px;font-size:12px">Level ${part.serviceLevel}</span>` : 
+        '<span style="color:#999">-</span>';
+    document.getElementById('popup-level').innerHTML = slText;
+    
+    const asm = assemblies[part.assembly];
+    document.getElementById('popup-assembly').innerHTML = 
+        `<strong>${part.assembly}</strong> - ${asm ? asm.name : 'Unknown'} <span style="color:#999">(PDF p.${asm?asm.page:'-'})</span>`;
+    
+    popup.classList.add('show');
+    
+    // Highlight in 3D
+    highlightAssembly(part.assembly);
+}
+
+function closePopup() {
+    document.getElementById('part-popup').classList.remove('show');
+}
+
+function filterParts() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    let filtered = partsData;
+    
+    if (currentFilter !== 'all') {
+        filtered = filtered.filter(p => p.assembly === currentFilter || 
+            (currentFilter === 'D' && ['D1','D2','D3'].includes(p.assembly)) ||
+            (currentFilter === 'G' && ['G1','G2'].includes(p.assembly)));
+    }
+    
+    if (search) {
+        filtered = filtered.filter(p => 
+            p.name.toLowerCase().includes(search) || 
+            p.partNum.toLowerCase().includes(search) ||
+            p.desc.toLowerCase().includes(search)
+        );
+    }
+    
+    renderTable(filtered);
+}
+
+function filterByAssembly(assembly) {
+    currentFilter = assembly;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.assembly === assembly || 
+            (assembly === 'all' && b.textContent === 'All'));
+    });
+    filterParts();
+}
+
+function showAssemblyParts(assembly) {
+    currentFilter = assembly;
+    document.getElementById('search-input').value = '';
+    filterParts();
+    
+    // Update filter buttons
+    document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.remove('active');
+        if (b.textContent === assembly) b.classList.add('active');
+    });
+}
+
+// Initialize
+initThree();
+initUI();
+</script>
 </body>
-</html>'''
-
-with open('/mnt/agents/output/3d_catalog_responsive.html', 'w', encoding='utf-8') as f:
-    f.write(html_content)
-
-print("✅ บันทึกไฟล์สำเร็จ: 3d_catalog_responsive.html")
-print(f"📄 ขนาดไฟล์: {len(html_content):,} ตัวอักษร")
+</html>
