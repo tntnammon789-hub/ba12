@@ -15,7 +15,7 @@
         
         body { margin: 0; padding: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f7; }
         
-        /* สัดส่วน Layout หลัก */
+        /* Layout Structure */
         #page-wrapper {
             display: grid;
             grid-template-columns: 1fr 400px;
@@ -31,7 +31,7 @@
 
         canvas { width: 100% !important; height: 100% !important; display: block; }
         
-        /* Sidebar สำหรับคอมพิวเตอร์ */
+        /* Sidebar Panel */
         #sidebar-panel {
             background: var(--bg-glass);
             border-left: 1px solid var(--border-glass);
@@ -43,7 +43,7 @@
             box-sizing: border-box;
         }
 
-        /* 📱 ปรับแต่งสำหรับหน้าจอมือถือโดยเฉพาะ - แบ่ง 50/50 ชัดเจน เครื่องอยู่บน */
+        /* Responsive Settings Mobile (50/50 Layout) */
         @media (max-width: 768px) {
             #page-wrapper {
                 grid-template-columns: 1fr;
@@ -57,7 +57,7 @@
             }
         }
 
-        /* ส่วนหัวข้อและปุ่มดาวน์โหลดคู่มือภาษาไทย */
+        /* Header Style */
         .sidebar-header {
             display: flex;
             justify-content: space-between;
@@ -68,7 +68,6 @@
         }
         .sidebar-header h3 { margin: 0; font-size: 18px; color: #222; }
         
-        /* ดีไซน์ปุ่มดาวน์โหลดคู่มือ */
         .manual-link-btn {
             background: #f0f4f8;
             border: 1px solid var(--primary);
@@ -85,22 +84,73 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             white-space: nowrap;
         }
-        .manual-link-btn:hover {
-            background: var(--primary);
-            color: white;
-            transform: scale(1.05);
-        }
+        .manual-link-btn:hover { background: var(--primary); color: white; transform: scale(1.05); }
 
-        /* ตะกร้าสินค้า */
+        /* 🛒 ตะกร้าสินค้าแบบดับเบิลคลิกเพื่อเปิด */
         #cart-section {
-            background: #eef2f7; padding: 12px; border-radius: 12px;
-            margin-bottom: 15px; border: 1px dashed #b0c4de;
+            background: #eef2f7; 
+            border-radius: 12px;
+            margin-bottom: 15px; 
+            border: 1px solid #b0c4de;
+            overflow: hidden;
         }
-        .cart-title { font-weight: bold; color: #333; margin-bottom: 8px; display: flex; justify-content: space-between; font-size: 13px; }
-        .cart-item-row { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; color: #555; border-bottom: 1px solid #ddd; align-items: center; }
+        
+        .cart-header-clickable {
+            padding: 12px;
+            background: #e2e8f0;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+            border-bottom: 1px solid #cbd5e1;
+        }
+        .cart-header-clickable:hover { background: #cbd5e1; }
+        
+        /* รีมาร์คจำนวนชิ้นงานเด่นๆ ตอนที่ยังไม่ขยาย */
+        .cart-remark-badge {
+            color: var(--danger);
+            font-weight: 800;
+            background: rgba(217, 83, 79, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 5px;
+            font-size: 12px;
+        }
+        
+        #cart-content-wrapper {
+            padding: 12px;
+            display: none; /* เริ่มต้นซ่อนไว้ */
+            background: #eef2f7;
+        }
+        
+        .cart-item-row { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; color: #555; border-bottom: 1px solid #ddd; align-items: center; }
         .remove-btn { color: var(--danger); cursor: pointer; font-weight: bold; margin-left: 8px; font-size: 14px; }
 
-        /* รายการอะไหล่ */
+        /* ปุ่มดาวน์โหลด PDF */
+        .pdf-download-btn {
+            width: 100%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .pdf-download-btn:hover { background: #1e7e34; }
+
+        /* รายการอะไหล่ทั้งหมด */
         .parts-container { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
         .section-title { font-weight: bold; color: var(--primary); margin: 16px 0 6px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid var(--primary); padding-left: 6px; }
         
@@ -110,18 +160,23 @@
             display: flex; justify-content: space-between; align-items: center;
             gap: 10px;
         }
-        
         .part-info { display: flex; flex-direction: column; gap: 2px; flex-grow: 1; }
         .part-name { font-weight: 500; color: #333; line-height: 1.3; }
         .part-number { font-family: monospace; font-weight: bold; color: #666; font-size: 11px; }
-        
-        .add-cart-btn {
-            background: var(--primary); color: white; border: none;
-            padding: 8px 12px; border-radius: 6px; cursor: pointer;
-            font-size: 12px; font-weight: bold; transition: background 0.2s;
-            white-space: nowrap;
-        }
+        .add-cart-btn { background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: background 0.2s; white-space: nowrap; }
         .add-cart-btn:hover { background: #004085; }
+
+        /* CSS สำหรับส่งออก PDF */
+        @media print {
+            body * { visibility: hidden; }
+            #print-pdf-layout, #print-pdf-layout * { visibility: visible; }
+            #print-pdf-layout { position: absolute; left: 0; top: 0; width: 100%; padding: 30px; box-sizing: border-box; }
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            .print-table th, .print-table td { border: 1px solid #333; padding: 10px; text-align: left; font-size: 14px; }
+            .print-table th { background-color: #f2f2f2; }
+        }
+        
+        #print-pdf-layout { display: none; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -129,27 +184,56 @@
 </head>
 <body>
 
+    <!-- Layout พิมพ์เอกสาร PDF -->
+    <div id="print-pdf-layout">
+        <div style="border-bottom: 3px solid #0056b3; padding-bottom: 10px; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #0056b3;">ใบรายการความต้องการอะไหล่ / Spare Parts Request</h2>
+            <p style="margin: 5px 0 0 0; font-size: 12px; color: #555;">เครื่องพิมพ์เครื่องติดฉลาก รุ่น Alpha Compact RH 120</p>
+        </div>
+        <p><strong>วันที่ออกเอกสาร:</strong> <span id="print-date"></span></p>
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th>ลำดับ (No.)</th>
+                    <th>รหัสอะไหล่ (Part Number)</th>
+                    <th>รายการชิ้นส่วน (Description)</th>
+                    <th>จำนวนที่สั่ง (Quantity)</th>
+                </tr>
+            </thead>
+            <tbody id="print-table-body"></tbody>
+        </table>
+        <div style="margin-top: 50px; text-align: right; font-size: 14px;">
+            <p>ลงชื่อ..........................................................ผู้เบิก/สั่งซื้อ</p>
+            <p style="margin-right: 40px; color: #666;">( ผู้เชี่ยวชาญเทคนิควิศวกรรม )</p>
+        </div>
+    </div>
+
     <div id="page-wrapper">
-        <!-- 3D Viewport Area อยู่ด้านบนเสมอมือถือเปิดมาไม่บัง -->
         <div id="canvas-container"></div>
         
-        <!-- แผงรายการและตะกร้า -->
         <div id="sidebar-panel">
             <div class="sidebar-header">
                 <h3>Alpha Compact Store</h3>
-                <!-- ปุ่มไอคอนสมุดพร้อมข้อความภาษาไทยรอบปุ่มตามลิงก์ที่ส่งมา -->
-                <a href="https://drive.google.com/file/d/1K3_B8owTqt8Z3EBZsreSOENv2JlD_VeM/view?usp=sharing" target="_blank" class="manual-link-btn" title="คลิกดาวน์โหลดคู่มือ">
+                <a href="https://drive.google.com/file/d/1K3_B8owTqt8Z3EBZsreSOENv2JlD_VeM/view?usp=sharing" target="_blank" class="manual-link-btn">
                     <span>📖 ดาวน์โหลดคู่มือการใช้งาน</span>
                 </a>
             </div>
             
+            <!-- ตะกร้าสินค้า -->
             <div id="cart-section">
-                <div class="cart-title">
-                    <span>🛒 ตะกร้าอะไหล่ที่เลือก</span>
-                    <span id="cart-count">(0 รายการ)</span>
+                <div class="cart-header-clickable" ondblclick="toggleCartView()" onclick="toggleCartView()" title="กดเพื่อเปิด/ปิดดูรายการด้านใน">
+                    <div>
+                        <span>🛒 ตะกร้าอะไหล่ที่เลือก</span>
+                        <!-- ช่อง Remark แจ้งเตือนจำนวนชิ้นงานด้านหลังบรรทัดตอนที่พับอยู่ -->
+                        <span id="cart-remark-badge" class="cart-remark-badge">[มีอะไหล่ในตะกร้า 0 ชิ้น]</span>
+                    </div>
+                    <span id="toggle-arrow" style="font-size: 11px; color: #666;">กดเพื่อขยายดูรายละเอียด ⚡</span>
                 </div>
-                <div id="cart-items-list">
-                    <div style="color:#888; font-size:12px; text-align:center; padding:5px;">ยังไม่ได้เลือกชิ้นส่วน</div>
+                <div id="cart-content-wrapper">
+                    <div id="cart-items-list">
+                        <div style="color:#888; font-size:12px; text-align:center; padding:5px;">ยังไม่ได้เลือกชิ้นส่วน</div>
+                    </div>
+                    <button class="pdf-download-btn" onclick="generatePartsPDF()">📄 ออกเอกสารรายการอะไหล่ (PDF)</button>
                 </div>
             </div>
 
@@ -158,147 +242,81 @@
     </div>
 
     <script>
-        // ฐานข้อมูลชิ้นส่วนจาก PDF ครบถ้วน[cite: 1]
         const completePdfDatabase = {
             "Baugr. A: Gehäuse / Chassis": [
-                { pn: "40003272", name: "Cover with controller LH (base)" },
                 { pn: "40003271", name: "Cover with controller RH (base)" },
                 { pn: "32912434", name: "Cover Alpha Compact" },
-                { pn: "32910047", name: "Plate connector assignment rear LH" },
                 { pn: "32910036", name: "Plate connector assignment rear RH" },
-                { pn: "32910046", name: "Plate connector assignment front LH" },
                 { pn: "32910035", name: "Plate connector assignment front RH" },
-                { pn: "33709391", name: "Cover cap M12" },
-                { pn: "29801902", name: "Blind plug" },
-                { pn: "40003268", name: "Power pack LH" },
-                { pn: "40003269", name: "Power pack RH" },
                 { pn: "33016858", name: "CPU/IO-Board" },
                 { pn: "33016788", name: "Motor-Board" },
+                { pn: "40003269", name: "Power pack RH" },
                 { pn: "29801904", name: "AC power connector" },
-                { pn: "40019074", name: "Intermediate sheet" },
-                { pn: "33709389", name: "Cable set Encoder / Sensor" },
-                { pn: "33709383", name: "Cable set I/O" },
-                { pn: "33709390", name: "Cable set HMI" },
-                { pn: "33709393", name: "Cable set stop sensor" },
-                { pn: "32910559", name: "Mains shield 300W" },
-                { pn: "33709382", name: "Cable set Alarmlamp" },
-                { pn: "32909028", name: "Main switch" },
-                { pn: "29800771", name: "Cable bushing 12H3468" },
-                { pn: "35001821", name: "USB Connection" },
-                { pn: "40001698", name: "Distance bolt SW5" },
-                { pn: "40005667", name: "Insulation plate" }
+                { pn: "40019074", name: "Intermediate sheet" }
             ],
             "Baugr. B: Transportstation": [
-                { pn: "33000139", name: "Adjusting washer 15x21x1" },
-                { pn: "32901032", name: "Bushing / Hülse" },
-                { pn: "33000792", name: "Ball bearing 6202 2RS" },
-                { pn: "32901009", name: "Spacer ring / Distanzring" },
-                { pn: "32901014", name: "Shaft 120mm / Welle 120mm" },
-                { pn: "32901121", name: "Shaft 150mm / Welle 150mm" },
                 { pn: "32901023", name: "Drive roller corund 120mm" },
                 { pn: "32901027", name: "Drive roller rubber 120mm" },
-                { pn: "32901024", name: "Drive roller corund 150mm" },
-                { pn: "32901028", name: "Drive roller rubber 150mm" },
                 { pn: "35080005", name: "Friction pulley complete" },
-                { pn: "35002198", name: "Friction pulley complete, Alu" },
                 { pn: "33001631", name: "Timing belt / Zahnriemen" },
-                { pn: "33001636", name: "Pulley 14-T5/40-0" },
-                { pn: "35001958", name: "Belt pulley complete RH/LH" },
-                { pn: "35001791", name: "Hand protection / Eingreifschutz" },
-                { pn: "33016851", name: "Motor / Motor" },
-                { pn: "33001640", name: "Pulley 14-T5/20-2" },
-                { pn: "33709381", name: "PCB-Connector 2 fold" },
-                { pn: "33001771", name: "Supporting block / Lagerblock" },
-                { pn: "33001923", name: "Pressing spring 9,6x32,5mm" },
-                { pn: "32901018", name: "Axle 120mm" },
-                { pn: "32901019", name: "Axle 150mm" },
-                { pn: "35002488", name: "Transport station 120mm LH" },
-                { pn: "35002492", name: "Transport station 150mm LH" },
                 { pn: "35001790", name: "Motor Drive 120-150mm" }
             ],
             "Baugr. C: Aufspulung / Rewinder": [
                 { pn: "35001797", name: "Dancer / Tänzer" },
                 { pn: "35001777", name: "Rewinder shaft 120mm" },
-                { pn: "35001926", name: "Rewinder shaft 150mm" },
-                { pn: "35001798", name: "Rewinder Assembly" },
-                { pn: "35001584", name: "Clutch complete 120-150mm RH" },
-                { pn: "35001614", name: "Clutch complete 120-150mm LH" },
-                { pn: "33005257", name: "Round belt / Rundriemen" },
-                { pn: "33016834", name: "Tension spring / Zugfeder" },
-                { pn: "32907237", name: "Axle / Achse" },
-                { pn: "35001826", name: "Setting ring / Stellring" },
                 { pn: "32907671", name: "Rewinder plate / Aufspullteller" },
-                { pn: "32907246", name: "Rewind U-hook" },
-                { pn: "32911430", name: "Rewind core / Aufspulkern" },
-                { pn: "35001775", name: "Clutch / Kupplung" },
-                { pn: "35001776", name: "Coupling sleeve RH" },
-                { pn: "35001835", name: "Coupling sleeve LH" },
-                { pn: "35002385", name: "Tightening sleeve" }
+                { pn: "32911430", name: "Rewind core / Aufspulkern" }
             ],
             "Baugr. D: Abspendung / Dispensing": [
                 { pn: "35080040", name: "Eccentric support 120mm" },
-                { pn: "35080042", name: "Swining support plate LH 120mm" },
                 { pn: "35080041", name: "Swining support plate RH 120mm" },
-                { pn: "33002259", name: "Stop dog / จำกัดระยะ" },
-                { pn: "35080002", name: "Deflection roller" },
-                { pn: "33002249", name: "Stop dog (Small)" },
-                { pn: "32901096", name: "Support of applicator tongue" },
                 { pn: "33001952", name: "Applicator sheet 140x60x2mm" },
-                { pn: "32901174", name: "Swinging support plate LH 150mm" },
-                { pn: "32910001", name: "Hand protection RH 150mm" },
-                { pn: "32910246", name: "Axle D10x20.5mm" },
-                { pn: "32910247", name: "Eccentric counter plate" },
-                { pn: "33001790", name: "Eccentric Lager" },
-                { pn: "32901088", name: "Deflection axle D10x195" },
-                { pn: "32901084", name: "Deflection axle D10x175mm" },
-                { pn: "32910025", name: "Hand protection LH 150mm" },
-                { pn: "32901080", name: "Axle D10x87mm" },
-                { pn: "32901173", name: "Swinging support plate RH 150mm" },
-                { pn: "33001954", name: "Applicator sheet 171x60x2mm" },
-                { pn: "33016857", name: "Slide bearings" },
-                { pn: "35080018", name: "Deflection roller 150mm" }
-            ],
-            "Baugr. I: Optionen / Modules": [
-                { pn: "35080043", name: "Pressing roller 120mm" },
-                { pn: "35080044", name: "Pressing roller 150mm" },
-                { pn: "32901107", name: "Holder / ตัวยึด" },
-                { pn: "32901110", name: "Axle 120mm" },
-                { pn: "32901111", name: "Axle 150mm" },
-                { pn: "33004354", name: "Pressing brush 120mm" },
-                { pn: "33004356", name: "Pressing brush 150mm" },
-                { pn: "32901891", name: "Axle 120mm (Brush)" },
-                { pn: "33016789", name: "Terminal Panel (Dual Knob)" },
-                { pn: "29802276", name: "Display Controller" },
-                { pn: "72900275", name: "Mounting bracket" },
-                { pn: "61801017", name: "Measuring wheel U200mm" },
-                { pn: "33003603", name: "Encoder 1024ppr" },
-                { pn: "22702287", name: "Alarm lamp M12" },
-                { pn: "35001817", name: "Light barriers holder" },
-                { pn: "29801655", name: "Photosensor Low label" },
-                { pn: "33709384", name: "Connection cable Photosensor" }
+                { pn: "33090245", name: "Label sensor OGUTI" }
             ]
         };
 
         const shoppingCart = {};
+        let isCartOpen = false;
+
+        function toggleCartView() {
+            const content = document.getElementById('cart-content-wrapper');
+            const arrow = document.getElementById('toggle-arrow');
+            isCartOpen = !isCartOpen;
+            
+            if (isCartOpen) {
+                content.style.display = 'block';
+                arrow.innerText = '▼ ปิดหน้าต่าง';
+            } else {
+                content.style.display = 'none';
+                arrow.innerText = 'กดเพื่อขยายดูรายละเอียด ⚡';
+            }
+        }
 
         function renderCart() {
             const container = document.getElementById('cart-items-list');
-            const countEl = document.getElementById('cart-count');
+            const remarkBadge = document.getElementById('cart-remark-badge');
             const keys = Object.keys(shoppingCart);
+            
+            // คำนวณจำนวนชิ้นงานชิ้นส่วนทั้งหมดในระบบ
+            let totalPieces = 0;
+            keys.forEach(pn => {
+                totalPieces += shoppingCart[pn].qty;
+            });
+
+            // ปรับปรุงข้อความ Remark ด้านหลังบรรทัดหลักตอนที่ยังไม่ขยาย[cite: 1]
+            remarkBadge.innerText = `[มีอะไหล่ในตะกร้า ${totalPieces} ชิ้น]`;
             
             if (keys.length === 0) {
                 container.innerHTML = `<div style="color:#888; font-size:12px; text-align:center; padding:5px;">ยังไม่ได้เลือกชิ้นส่วน</div>`;
-                countEl.innerText = `(0 รายการ)`;
                 return;
             }
 
-            countEl.innerText = `(${keys.length} รายการ)`;
             container.innerHTML = keys.map(pn => `
                 <div class="cart-item-row">
                     <span>⚙️ P/N: ${pn} (${shoppingCart[pn].qty} ชิ้น)</span>
                     <span>
-                        <small style="color:#666;">${shoppingCart[pn].name.substring(0,18)}...</small>
-                        <span class="remove-btn" onclick="removeFromCart('${pn}')">❌</span>
+                        <small style="color:#666;">${shoppingCart[pn].name.substring(0,15)}...</small>
+                        <span class="remove-btn" onclick="removeFromCart('${pn}'); event.stopPropagation();">❌</span>
                     </span>
                 </div>
             `).join('');
@@ -318,7 +336,29 @@
             renderCart();
         };
 
-        // Render ชิ้นส่วนลงหน้าเว็บ
+        window.generatePartsPDF = function() {
+            const keys = Object.keys(shoppingCart);
+            if(keys.length === 0) {
+                alert("กรุณาเลือกชิ้นส่วนอะไหล่ลงตะกร้าก่อนออกเอกสาร PDF ครับ");
+                return;
+            }
+            
+            document.getElementById('print-date').innerText = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' }) + " น.";
+            
+            const tbody = document.getElementById('print-table-body');
+            tbody.innerHTML = keys.map((pn, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td style="font-family: monospace; font-weight: bold;">${pn}</td>
+                    <td>${shoppingCart[pn].name}</td>
+                    <td><strong>${shoppingCart[pn].qty}</strong> ชิ้น</td>
+                </tr>
+            `).join('');
+            
+            window.print();
+        };
+
+        // Render รายการอะไหล่ลงหน้าต่าง UI
         const listContainer = document.getElementById('dynamic-parts-list');
         Object.entries(completePdfDatabase).forEach(([section, items]) => {
             const secTitle = document.createElement('div');
@@ -340,7 +380,7 @@
             });
         });
 
-        // Initialize Three.js Engine
+        // Initialize 3D WebGL Canvas
         const container3d = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xeeeeee);
@@ -362,7 +402,6 @@
         dirLight.position.set(10, 20, 15);
         scene.add(dirLight);
 
-        // Load 3D GLB Model
         const loader = new THREE.GLTFLoader();
         const filename = "32100033_A_Comp_120_RH.step.glb";
 
