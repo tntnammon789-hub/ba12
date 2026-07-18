@@ -1,277 +1,223 @@
-<!DOCTYPE html>
+html_content = '''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weber Alpha Compact - 3D Spare Parts Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Enterprise 3D Spare Part Catalog - Alpha Compact LH/RH</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', system-ui, sans-serif; 
-            overflow: hidden; 
-            background: #f5f5f5; 
-        }
-        #app-container { display: flex; height: 100vh; flex-direction: column; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        /* Header */
-        .header { 
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
-            color: white; 
-            padding: 12px 20px; 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
+        html, body {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            user-select: none;
+            -webkit-user-select: none;
         }
-        .header-logo { 
-            width: 36px; 
-            height: 36px; 
-            background: #e94560; 
-            border-radius: 8px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-weight: bold; 
+
+        .wrapper {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
         }
-        .header h1 { font-size: 16px; margin: 0; }
-        .header p { font-size: 11px; margin: 0; opacity: 0.7; }
-        
-        /* Main Layout */
-        .main { display: flex; flex: 1; overflow: hidden; }
-        
-        /* Left Panel - Assemblies */
-        .left-panel { 
-            width: 260px; 
-            background: white; 
-            border-right: 1px solid #e0e0e0; 
-            overflow-y: auto; 
-            padding: 16px; 
+
+        /* ===== CANVAS AREA ===== */
+        #canvas-container {
+            flex: 1;
+            height: 100vh;
+            position: relative;
+            background: radial-gradient(circle, #252528 0%, #0c0c0e 100%);
+            overflow: hidden;
         }
-        .panel-title { 
-            font-size: 12px; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px; 
-            color: #666; 
-            margin-bottom: 12px; 
-            font-weight: 600; 
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
         }
-        .assembly-item { 
-            padding: 10px 12px; 
-            margin-bottom: 6px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            transition: all 0.2s; 
-            border-left: 3px solid transparent;
+
+        /* ===== SIDEBAR (DESKTOP) ===== */
+        #sidebar {
+            width: 320px;
+            height: 100vh;
+            background-color: #1a1a1c;
+            border-left: 1px solid #2d2d30;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.4);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .assembly-item:hover { background: #f0f0f0; }
-        .assembly-item.active { 
-            background: #e3f2fd; 
-            border-left-color: #2196f3; 
+
+        .sidebar-header {
+            padding: 18px 16px;
+            background: #111;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #2d2d30;
+            color: #0e639c;
         }
-        .assembly-code { 
-            font-weight: bold; 
-            font-size: 13px; 
-            color: #333; 
+
+        .tab-bar {
+            display: flex;
+            background: #141416;
+            border-bottom: 1px solid #2d2d30;
         }
-        .assembly-name { 
-            font-size: 11px; 
-            color: #666; 
-            margin-top: 2px; 
-        }
-        .assembly-page { 
-            font-size: 10px; 
-            color: #999; 
-        }
-        
-        /* Center - 3D Viewer */
-        .viewer-container { 
-            flex: 1; 
-            position: relative; 
-            background: #e8e8e8; 
-        }
-        #three-canvas { width: 100%; height: 100%; }
-        
-        .viewer-controls { 
-            position: absolute; 
-            top: 12px; 
-            right: 12px; 
-            display: flex; 
-            gap: 8px; 
-        }
-        .viewer-btn { 
-            background: white; 
-            border: none; 
-            padding: 8px 14px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-            font-size: 12px; 
-        }
-        .viewer-btn:hover { background: #f5f5f5; }
-        
-        /* Part Popup */
-        .part-popup { 
-            display: none; 
-            position: absolute; 
-            bottom: 20px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            background: white; 
-            padding: 16px 20px; 
-            border-radius: 12px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15); 
-            min-width: 340px; 
-            max-width: 450px; 
-            z-index: 100; 
-        }
-        .part-popup.show { display: block; }
-        .popup-header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: start; 
-        }
-        .popup-pos { 
-            background: #e94560; 
-            color: white; 
-            padding: 2px 8px; 
-            border-radius: 4px; 
-            font-size: 11px; 
-            font-weight: bold; 
-        }
-        .popup-close { 
-            background: none; 
-            border: none; 
-            font-size: 20px; 
-            cursor: pointer; 
-            color: #999; 
-        }
-        .popup-name { 
-            margin: 8px 0 4px 0; 
-            font-size: 15px; 
-            color: #1a1a2e; 
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            color: #8e8e93;
+            font-size: 0.8rem;
             font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .popup-desc { 
-            margin: 0; 
-            font-size: 12px; 
-            color: #666; 
+        .tab-btn.active {
+            color: #fff;
+            background: #1a1a1c;
+            border-bottom: 2px solid #0e639c;
         }
-        .popup-details { 
-            margin-top: 12px; 
-            padding-top: 12px; 
-            border-top: 1px solid #eee; 
-            display: flex; 
-            gap: 20px; 
-            flex-wrap: wrap; 
+
+        .view-panel {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: none;
+            -webkit-overflow-scrolling: touch;
         }
-        .detail-item {}
-        .detail-label { 
-            font-size: 10px; 
-            color: #999; 
-            text-transform: uppercase; 
+        .view-panel.active { display: block; }
+
+        /* ===== PART ITEMS ===== */
+        .part-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #222225;
+            margin-bottom: 8px;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #2d2d30;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
-        .detail-value { 
-            margin: 2px 0 0 0; 
-            font-size: 13px; 
-            font-weight: 600; 
-            color: #333; 
+        .part-item:hover {
+            border-color: #0e639c;
+            background: #26262a;
         }
-        .detail-value.mono { font-family: monospace; }
-        
-        /* Right Panel - Parts Table */
-        .right-panel { 
-            width: 420px; 
-            background: white; 
-            border-left: 1px solid #e0e0e0; 
-            display: flex; 
-            flex-direction: column; 
+        .part-item.active-part {
+            border-color: #0e639c;
+            background: rgba(14, 99, 156, 0.15);
         }
-        .table-header { 
-            padding: 14px 16px; 
-            border-bottom: 1px solid #e0e0e0; 
+
+        .part-info { display: flex; flex-direction: column; width: 75%; }
+        .part-id { font-size: 0.7rem; color: #0e639c; font-weight: 700; }
+        .part-name { font-size: 0.8rem; color: #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+
+        /* ===== CUSTOM CHECKBOX ===== */
+        .cb-wrapper { width: 20px; height: 20px; border: 2px solid #555; border-radius: 4px; position: relative; display: flex; align-items: center; justify-content: center; }
+        .part-item.active-part .cb-wrapper { background: #0e639c; border-color: #0e639c; }
+        .part-item.active-part .cb-wrapper::after { content: '✓'; color: white; font-size: 11px; font-weight: bold; }
+
+        /* ===== CART CONTROLS ===== */
+        .cart-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1e1e20;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border: 1px solid #2d2d30;
         }
-        .search-box { 
-            width: 100%; 
-            padding: 8px 12px; 
-            border: 1px solid #ddd; 
-            border-radius: 6px; 
-            font-size: 12px; 
-            margin-top: 8px; 
+        .qty-controls { display: flex; align-items: center; gap: 8px; }
+        .btn-qty {
+            background: #2d2d30; color: #fff; border: none; width: 28px; height: 28px;
+            cursor: pointer; border-radius: 4px; font-weight: bold; display: flex; align-items: center; justify-content: center;
         }
-        .filter-btns { 
-            display: flex; 
-            gap: 6px; 
-            margin-top: 10px; 
-            flex-wrap: wrap; 
+        .btn-qty:active { background: #0e639c; }
+        .btn-remove { background: #3a1515; color: #ff8888; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+
+        /* ===== FLOATING HUD / TOOLTIP ===== */
+        #tooltip {
+            position: fixed;
+            display: none;
+            background-color: rgba(20, 20, 22, 0.95);
+            border: 1px solid #2d2d30;
+            padding: 12px;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 100;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            width: 200px;
         }
-        .filter-btn { 
-            padding: 4px 10px; 
-            border: 1px solid #ddd; 
-            border-radius: 4px; 
-            background: white; 
-            font-size: 11px; 
-            cursor: pointer; 
+        #tooltip img { width: 100%; height: auto; border-radius: 4px; margin-bottom: 6px; background: #fff; }
+        .tooltip-title { font-weight: 700; color: #0e639c; font-size: 0.65rem; }
+        .tooltip-name { font-size: 0.8rem; color: #fff; margin-top: 2px; }
+
+        /* MOBILE BOTTOM HUD */
+        #mobile-hud {
+            display: none;
+            position: absolute;
+            bottom: 16px; left: 16px; right: 16px;
+            background: rgba(26, 26, 28, 0.95);
+            border: 1px solid #2d2d30;
+            border-radius: 12px;
+            padding: 12px;
+            z-index: 5;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
         }
-        .filter-btn.active { 
-            background: #1a1a2e; 
-            color: white; 
-            border-color: #1a1a2e; 
+        .hud-content { display: flex; align-items: center; gap: 12px; }
+        .hud-text { flex: 1; min-width: 0; }
+
+        /* ===== INTERACTIVE FLOATING BUTTONS FOR MOBILE ===== */
+        #mobile-toggle-btn {
+            display: none;
+            position: absolute;
+            top: 16px; right: 16px;
+            z-index: 15;
+            background: #0e639c; color: white; border: none;
+            padding: 12px 18px; border-radius: 30px; font-weight: 600; font-size: 0.85rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
         }
-        .table-container { 
-            flex: 1; 
-            overflow-y: auto; 
+
+        #loading-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: #121212; z-index: 50; transition: opacity 0.4s ease;
         }
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            font-size: 12px; 
-        }
-        th { 
-            position: sticky; 
-            top: 0; 
-            background: #f8f9fa; 
-            padding: 10px 12px; 
-            text-align: left; 
-            border-bottom: 2px solid #dee2e6; 
-            font-weight: 600; 
-            color: #495057; 
-            font-size: 10px; 
-            text-transform: uppercase; 
-        }
-        td { 
-            padding: 8px 12px; 
-            border-bottom: 1px solid #f0f0f0; 
-        }
-        tr:hover { background: #f8f9fa; cursor: pointer; }
-        tr.selected { background: #e3f2fd !important; }
-        .part-pos { 
-            font-weight: bold; 
-            color: #e94560; 
-        }
-        .part-num { 
-            font-family: monospace; 
-            font-size: 11px; 
-            color: #666; 
-        }
-        .service-badge { 
-            padding: 2px 6px; 
-            border-radius: 3px; 
-            font-size: 10px; 
-            font-weight: 600; 
-        }
-        .sl-2 { background: #fff3e0; color: #e65100; }
-        .sl-3 { background: #e8f5e9; color: #2e7d32; }
-        .sl-4 { background: #e3f2fd; color: #1565c0; }
-        
-        .tooltip { 
-            position: fixed; 
-            background: #333; 
-            color: white; 
-            padding: 6px 10px; 
-            border-radius: 4px; 
-            font-size: 11px; 
-            pointer-events: none; 
-            z-index: 1000; 
-            display: none; 
+        .spinner { width: 40px; height: 40px; border: 3px solid #2d2d30; border-top: 3px solid #0e639c; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ===== RESPONSIVE LAYOUT (MOBILE) ===== */
+        @media (max-width: 768px) {
+            .wrapper { flex-direction: column; }
+            #canvas-container { height: 100vh; width: 100vw; }
+            #mobile-toggle-btn { display: block; }
+            #mobile-hud { display: block; }
+            
+            #sidebar {
+                position: fixed;
+                top: 0; right: 0;
+                width: 85vw; height: 100vh;
+                z-index: 20;
+                transform: translateX(100%);
+            }
+            #sidebar.open { transform: translateX(0); }
+            
+            .sidebar-overlay {
+                display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(0,0,0,0.5); z-index: 18; backdrop-filter: blur(2px);
+            }
+            #sidebar.open + .sidebar-overlay { display: block; }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -279,539 +225,420 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
-    <div id="app-container">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-logo">W</div>
-            <div>
-                <h1>Weber Alpha Compact</h1>
-                <p>Spare Parts Manual 40006368 | 3D Interactive Viewer</p>
+
+    <div class="wrapper">
+        <!-- CANVAS CONTAINER -->
+        <div id="canvas-container">
+            <button id="mobile-toggle-btn" onclick="toggleSidebar(true)">☰ Menu Parts</button>
+            
+            <div id="loading-overlay">
+                <div style="text-align:center;">
+                    <div class="spinner"></div>
+                    <div style="color:#8e8e93; font-size:0.8rem; letter-spacing:1px;">LOADING 3D SYSTEM...</div>
+                </div>
+            </div>
+
+            <!-- MOBILE BOTTOM DATA HUD -->
+            <div id="mobile-hud">
+                <div class="hud-content">
+                    <div class="hud-text">
+                        <div id="hud-id" style="font-size:0.65rem; color:#0e639c; font-weight:700;">TOUCH COMPONENT TO EXPLORE</div>
+                        <div id="hud-name" style="font-size:0.85rem; color:#fff; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Alpha Compact 120 System</div>
+                    </div>
+                    <button id="hud-action-btn" style="background:#0e639c; color:white; border:none; padding:8px 14px; border-radius:6px; font-size:0.75rem; font-weight:600; display:none;">Add</button>
+                </div>
+            </div>
+
+            <!-- DESKTOP FLOATING TOOLTIP -->
+            <div id="tooltip">
+                <img id="tooltip-img" src="" alt="Part Image">
+                <div id="tooltip-id" class="tooltip-title">PART NO:</div>
+                <div id="tooltip-name" class="tooltip-name">Part Name</div>
             </div>
         </div>
-        
-        <div class="main">
-            <!-- Left: Assembly List -->
-            <div class="left-panel">
-                <div class="panel-title">Assemblies</div>
-                <div id="assembly-list"></div>
-                <div style="margin-top:20px;padding:10px;background:#fff3e0;border-radius:6px;border-left:3px solid #ff9800;">
-                    <p style="margin:0;font-size:11px;color:#e65100;">
-                        <strong>Tip:</strong> Click a part in 3D or table to see PDF details.
-                    </p>
-                </div>
+
+        <!-- SIDEBAR CONTAINER -->
+        <div id="sidebar">
+            <div class="sidebar-header">ALPHA COMPACT INDUSTRIAL</div>
+            <div class="tab-bar">
+                <button class="tab-btn active" onclick="switchTab('parts')">PARTS LIST</button>
+                <button class="tab-btn" onclick="switchTab('cart')" id="cart-tab-btn">CART (0)</button>
             </div>
             
-            <!-- Center: 3D Viewer -->
-            <div class="viewer-container" id="three-container">
-                <div class="viewer-controls">
-                    <button class="viewer-btn" onclick="resetView()">↺ Reset</button>
-                    <button class="viewer-btn" onclick="toggleWireframe()">Wireframe</button>
-                </div>
-                <div class="part-popup" id="part-popup">
-                    <div class="popup-header">
-                        <div>
-                            <span class="popup-pos" id="popup-pos">Pos. --</span>
-                            <div class="popup-name" id="popup-name">Part Name</div>
-                            <div class="popup-desc" id="popup-desc">Description</div>
-                        </div>
-                        <button class="popup-close" onclick="closePopup()">×</button>
-                    </div>
-                    <div class="popup-details">
-                        <div class="detail-item">
-                            <div class="detail-label">Part Number</div>
-                            <div class="detail-value mono" id="popup-partnum">---</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Qty</div>
-                            <div class="detail-value" id="popup-qty">1</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Service Level</div>
-                            <div class="detail-value" id="popup-level">-</div>
-                        </div>
-                    </div>
-                    <div style="margin-top:10px;padding-top:10px;border-top:1px solid #eee;">
-                        <div class="detail-label">Assembly</div>
-                        <div class="detail-value" id="popup-assembly" style="font-size:12px;color:#555;">---</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Right: Parts Table -->
-            <div class="right-panel">
-                <div class="table-header">
-                    <div class="panel-title">Spare Parts List</div>
-                    <input type="text" class="search-box" id="search-input" 
-                           placeholder="Search part number or name..." oninput="filterParts()">
-                    <div class="filter-btns" id="filter-btns">
-                        <button class="filter-btn active" onclick="filterByAssembly('all')">All</button>
-                    </div>
-                </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Pos</th>
-                                <th>Part Name</th>
-                                <th>Part No.</th>
-                                <th style="text-align:center">Qty</th>
-                            </tr>
-                        </thead>
-                        <tbody id="parts-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
+            <div id="parts-panel" class="view-panel active"></div>
+            <div id="cart-panel" class="view-panel"></div>
         </div>
+        <div class="sidebar-overlay" onclick="toggleSidebar(false)"></div>
     </div>
-    
-    <div class="tooltip" id="tooltip"></div>
 
-<script>
-// ===== DATA FROM PDF MANUAL 40006368 =====
-const assemblies = {
-    'A': { name: 'Chassis Alpha Compact', page: '7-9', color: 0x4a90d9 },
-    'B': { name: 'Transport / Transportstation', page: '10-12', color: 0xe74c3c },
-    'C': { name: 'Rewinder', page: '13-15', color: 0x2ecc71 },
-    'D1': { name: 'Dispensing 120mm', page: '16-18', color: 0xf39c12 },
-    'D2': { name: 'Dispensing 150mm', page: '19-21', color: 0xe67e22 },
-    'D3': { name: 'Pneumatic Peeler Plate', page: '22-25', color: 0xd35400 },
-    'E': { name: 'Unwinder', page: '26-29', color: 0x9b59b6 },
-    'F': { name: 'Label Guiding', page: '30-32', color: 0x1abc9c },
-    'G1': { name: 'Label Detection "Oguti"', page: '33-34', color: 0x3498db },
-    'G2': { name: 'Label Detection "USGT"', page: '35-36', color: 0x2980b9 },
-    'H': { name: 'Clamp', page: '37-38', color: 0x34495e },
-    'I': { name: 'Options', page: '39-45', color: 0x16a085 },
-    'J': { name: 'Tamp Blow 250', page: '46-52', color: 0xc0392b },
-    'K': { name: 'Swing Arm 90°-180°', page: '53-60', color: 0x8e44ad },
-    'L': { name: 'Applicator HS50+HS100', page: '61-63', color: 0x27ae60 },
-    'M': { name: 'Applicator KH100-400', page: '64-66', color: 0x2c3e50 }
-};
-
-// [Include the full partsData array from the widget above here]
-const partsData = [ /* ... paste full partsData from widget ... */ ];
-
-// ===== THREE.JS SETUP =====
-let scene, camera, renderer, controls, raycaster, mouse;
-let parts3D = []; // Store 3D part meshes
-let selectedPart = null;
-let wireframeMode = false;
-
-function initThree() {
-    const container = document.getElementById('three-container');
-    
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xe8e8e8);
-    
-    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-    camera.position.set(15, 10, 20);
-    
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.shadowMap.enabled = true;
-    container.insertBefore(renderer.domElement, container.firstChild);
-    
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-    
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(10, 20, 15);
-    dirLight.castShadow = true;
-    scene.add(dirLight);
-    
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
-    fillLight.position.set(-10, 5, -10);
-    scene.add(fillLight);
-    
-    // Controls
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.target.set(0, 2, 0);
-    
-    // Raycaster for clicking
-    raycaster = new THREE.Raycaster();
-    mouse = new THREE.Vector2();
-    
-    // Create placeholder geometry for each assembly
-    createPlaceholderGeometry();
-    
-    // Load GLB if available
-    loadGLBModel();
-    
-    // Events
-    renderer.domElement.addEventListener('click', onMouseClick);
-    renderer.domElement.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('resize', onWindowResize);
-    
-    animate();
-}
-
-function createPlaceholderGeometry() {
-    // Create simplified geometry representing each assembly area
-    const assemblyPositions = {
-        'A': { pos: [0, 3, 0], size: [4, 3, 2] },      // Chassis - center
-        'B': { pos: [0, 1, 2], size: [3, 1.5, 1.5] },  // Transport - front
-        'C': { pos: [-3, 2, -1], size: [1.5, 2, 1.5] }, // Rewinder - left back
-        'D': { pos: [0, 0.5, 4], size: [3, 0.5, 2] },   // Dispensing - front bottom
-        'E': { pos: [3, 4, -2], size: [2, 2, 2] },      // Unwinder - right top back
-        'F': { pos: [0, 2.5, 1], size: [2.5, 0.3, 1] }, // Label guide - middle
-        'G': { pos: [0, 2, 3], size: [1, 0.5, 0.5] },   // Sensor - front
-        'H': { pos: [0, 0, 0], size: [1, 1, 1] },       // Clamp - bottom
-        'I': { pos: [2, 1, 2], size: [1, 1, 1] },       // Options - right
-        'J': { pos: [0, 6, 0], size: [2, 4, 2] },       // Tamp blow - top
-        'K': { pos: [-2, 5, 0], size: [2, 3, 2] },      // Swing arm - left top
-        'L': { pos: [2, 5, 0], size: [1.5, 3, 1.5] },   // HS applicator - right top
-        'M': { pos: [2, 6, 0], size: [1, 4, 1] }        // KH applicator - far right
-    };
-    
-    Object.keys(assemblyPositions).forEach(key => {
-        const ap = assemblyPositions[key];
-        const geometry = new THREE.BoxGeometry(...ap.size);
-        const material = new THREE.MeshPhongMaterial({ 
-            color: assemblies[key]?.color || 0x888888,
-            transparent: true,
-            opacity: 0.7
-        });
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(...ap.pos);
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        mesh.userData = { assembly: key, isAssembly: true };
-        scene.add(mesh);
-        parts3D.push(mesh);
+    <script>
+        const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
         
-        // Add wireframe edges
-        const edges = new THREE.EdgesGeometry(geometry);
-        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x333333 }));
-        mesh.add(line);
-    });
-    
-    // Ground plane
-    const groundGeo = new THREE.PlaneGeometry(30, 30);
-    const groundMat = new THREE.MeshPhongMaterial({ color: 0xcccccc });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -1;
-    ground.receiveShadow = true;
-    scene.add(ground);
-    
-    // Grid
-    const grid = new THREE.GridHelper(30, 30, 0x999999, 0xcccccc);
-    grid.position.y = -0.9;
-    scene.add(grid);
-}
+        // ===== UI TABS & INTERACTION =====
+        function toggleSidebar(open) {
+            document.getElementById('sidebar').classList.toggle('open', open);
+        }
 
-function loadGLBModel() {
-    const loader = new THREE.GLTFLoader();
-    const filename = "32100033_A_Comp_120_RH.step.glb";
-    
-    loader.load(filename, function(gltf) {
-        const model = gltf.scene;
-        
-        // Center model
-        const box = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
-        model.position.sub(center);
-        
-        // Scale to fit
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 10 / maxDim;
-        model.scale.setScalar(scale);
-        
-        // Hide placeholder geometry
-        parts3D.forEach(p => p.visible = false);
-        
-        // Add model parts to raycasting
-        model.traverse((child) => {
-            if (child.isMesh) {
-                child.userData.isModelPart = true;
-                parts3D.push(child);
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+            
+            if(tab === 'parts') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('parts-panel').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('cart-panel').classList.add('active');
             }
+        }
+
+        // ===== PARTS DATA DATABASE =====
+        const masterSparePartsCatalog = {
+            "BAUGRUPPE_A_CHASSIS": [
+                { id: "40003272", name: "Cover with controller LH", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Cover+LH" },
+                { id: "40003271", name: "Cover with controller RH", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Cover+RH" },
+                { id: "32912434", name: "Deckel Alpha Compact Base", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Deckel+Alpha" },
+                { id: "33016858", name: "CPU/IO-Board System controller", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=CPU+IO+Board" },
+                { id: "33016788", name: "Motor-Board Drive controller", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Motor+Board" }
+            ],
+            "BAUGRUPPE_B_TRANSPORT": [
+                { id: "32901023", name: "Drive roller corund 120mm", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Corund+120mm" },
+                { id: "32901027", name: "Drive roller rubber 120mm", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Rubber+120mm" },
+                { id: "33016851", name: "Main Step Motor Drive", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Main+Motor" }
+            ],
+            "BAUGRUPPE_C_REWINDER": [
+                { id: "35001797", name: "Dancer complete system", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Dancer+Arm" },
+                { id: "35001777", name: "Rewinder shaft 120mm Core", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Rewind+Shaft+120" }
+            ]
+        };
+
+        let partDatabase = {};
+        let selectedPartsCart = {};
+        let independentMeshRegistry = [];
+        let meshToPartMap = new Map();
+        let lastHoveredPartId = null;
+        let selectedHudPartKey = null;
+
+        // Flatten data structure
+        let counter = 1;
+        for (const [group, items] of Object.entries(masterSparePartsCatalog)) {
+            items.forEach(item => {
+                let key = "Isolated_Mesh_ID_" + String(counter).padStart(3, '0');
+                partDatabase[key] = { ...item, group: group };
+                counter++;
+            });
+        }
+
+        // Render Lists
+        const partsPanel = document.getElementById('parts-panel');
+        for (const [key, info] of Object.entries(partDatabase)) {
+            const div = document.createElement('div');
+            div.className = 'part-item';
+            div.id = `part-item-${key}`;
+            div.innerHTML = `
+                <div class="part-info">
+                    <span class="part-id">P/N: ${info.id}</span>
+                    <span class="part-name">${info.name}</span>
+                </div>
+                <div class="cb-wrapper"></div>
+            `;
+            
+            if(!isMobile) {
+                div.addEventListener('mouseenter', () => highlightMeshState(key, true));
+                div.addEventListener('mouseleave', () => highlightMeshState(key, false));
+            }
+            
+            div.addEventListener('click', () => {
+                togglePartSelection(key);
+            });
+            partsPanel.appendChild(div);
+        }
+
+        function togglePartSelection(key) {
+            if (selectedPartsCart[key]) {
+                delete selectedPartsCart[key];
+            } else {
+                selectedPartsCart[key] = 1;
+            }
+            updateUIState();
+            syncMeshVisualState(key);
+        }
+
+        function modifyQty(key, amt) {
+            if (selectedPartsCart[key]) {
+                selectedPartsCart[key] += amt;
+                if(selectedPartsCart[key] <= 0) delete selectedPartsCart[key];
+                updateUIState();
+                syncMeshVisualState(key);
+            }
+        }
+
+        function updateUIState() {
+            let totalItems = 0;
+            // Update panel elements class
+            for (const key of Object.keys(partDatabase)) {
+                const el = document.getElementById(`part-item-${key}`);
+                if(selectedPartsCart[key]) {
+                    el.classList.add('active-part');
+                    totalItems++;
+                } else {
+                    el.classList.remove('active-part');
+                }
+            }
+
+            document.getElementById('cart-tab-btn').innerText = `CART (${totalItems})`;
+
+            // Render Cart UI
+            const cartPanel = document.getElementById('cart-panel');
+            cartPanel.innerHTML = '';
+            
+            if(Object.keys(selectedPartsCart).length === 0) {
+                cartPanel.innerHTML = '<div style="text-align:center;color:#666;margin-top:40px;font-style:italic;font-size:0.8rem;">No parts selected</div>';
+            } else {
+                for (const [key, qty] of Object.entries(selectedPartsCart)) {
+                    const info = partDatabase[key];
+                    const div = document.createElement('div');
+                    div.className = 'cart-item';
+                    div.innerHTML = `
+                        <div style="max-width:55%;">
+                            <div style="font-size:0.7rem;font-weight:bold;color:#0e639c;">${info.id}</div>
+                            <div style="font-size:0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;">${info.name}</div>
+                        </div>
+                        <div class="qty-controls">
+                            <button class="btn-qty" onclick="modifyQty('${key}', -1)">-</button>
+                            <span style="font-size:0.8rem;font-weight:bold;min-width:16px;text-align:center;">${qty}</span>
+                            <button class="btn-qty" onclick="modifyQty('${key}', 1)">+</button>
+                            <button class="btn-remove" onclick="modifyQty('${key}', -${qty})">✕</button>
+                        </div>
+                    `;
+                    cartPanel.appendChild(div);
+                }
+            }
+
+            // Sync Mobile Action Button text
+            if(selectedHudPartKey) {
+                const btn = document.getElementById('hud-action-btn');
+                btn.innerText = selectedPartsCart[selectedHudPartKey] ? 'Remove' : 'Add to Cart';
+                btn.style.background = selectedPartsCart[selectedHudPartKey] ? '#a61c1c' : '#0e639c';
+            }
+        }
+
+        // ===== THREE.JS GRAPHICS SCENE =====
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x131315);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(25, 18, 30);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 15);
+        scene.add(dirLight);
+
+        // Load Engine Dummy Geometry (Since actual step file asset is referenced externally)
+        // Here we build structural bounding meshes to mock the visual nodes assembly dynamically
+        function buildMockAssemblyHierarchy() {
+            let databaseKeys = Object.keys(partDatabase);
+            let idx = 0;
+            
+            const groupNode = new THREE.Group();
+            databaseKeys.forEach((key) => {
+                const geometry = new THREE.BoxGeometry(2, 1.5 + Math.random()*2, 2);
+                const mat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color().setHSL((idx * 0.13) % 1.0, 0.25, 0.45),
+                    roughness: 0.4,
+                    metalness: 0.2
+                });
+                const mesh = new THREE.Mesh(geometry, mat);
+                mesh.position.set((idx % 3) * 4 - 4, (idx / 3) * 2 - 2, Math.sin(idx) * 2);
+                mesh.name = key;
+                
+                meshToPartMap.set(mesh.uuid, key);
+                independentMeshRegistry.push(mesh);
+                groupNode.add(mesh);
+                idx++;
+            });
+            scene.add(groupNode);
+            
+            // Dismiss loader screen safely
+            document.getElementById('loading-overlay').style.opacity = '0';
+            setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 400);
+        }
+
+        buildMockAssemblyHierarchy();
+
+        // ===== STABLE GRAPHICS INTERACTION LOGIC (Anti-Flicker Fixes) =====
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function highlightMeshState(key, highlight) {
+            if(isMobile) return; // Ignore on touch nodes
+            
+            const targetedMesh = independentMeshRegistry.find(m => m.name === key);
+            if (!targetedMesh) return;
+
+            if (highlight) {
+                targetedMesh.material.emissive.setHex(0x0e639c);
+                targetedMesh.material.emissiveIntensity = 0.45;
+            } else {
+                // If currently added to cart, keep partial highlighted color steady
+                if(selectedPartsCart[key]) {
+                    targetedMesh.material.emissive.setHex(0x0e639c);
+                    targetedMesh.material.emissiveIntensity = 0.2;
+                } else {
+                    targetedMesh.material.emissive.setHex(0x000000);
+                    targetedMesh.material.emissiveIntensity = 0;
+                }
+            }
+        }
+
+        function syncMeshVisualState(key) {
+            const mesh = independentMeshRegistry.find(m => m.name === key);
+            if(!mesh) return;
+            if (selectedPartsCart[key]) {
+                mesh.material.emissive.setHex(0x0e639c);
+                mesh.material.emissiveIntensity = 0.2;
+            } else {
+                mesh.material.emissive.setHex(0x000000);
+                mesh.material.emissiveIntensity = 0;
+            }
+        }
+
+        // Mouse Motion processing
+        function handlePointerTracking(e) {
+            if(isMobile) return;
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(independentMeshRegistry);
+
+            const tooltipEl = document.getElementById('tooltip');
+
+            if(intersects.length > 0) {
+                const mesh = intersects[0].object;
+                const partKey = meshToPartMap.get(mesh.uuid);
+                
+                // CRITICAL FIX: Only change data state parameters if intersecting node is brand new element
+                if (lastHoveredPartId !== partKey) {
+                    if(lastHoveredPartId) highlightMeshState(lastHoveredPartId, false);
+                    
+                    lastHoveredPartId = partKey;
+                    highlightMeshState(partKey, true);
+                    
+                    const p = partDatabase[partKey];
+                    document.getElementById('tooltip-img').src = p.img;
+                    document.getElementById('tooltip-id').innerText = "PART NO: " + p.id;
+                    document.getElementById('tooltip-name').innerText = p.name;
+                    tooltipEl.style.display = 'block';
+                }
+                
+                // Track dynamic positional metrics values correctly
+                tooltipEl.style.left = (e.clientX + 15) + 'px';
+                tooltipEl.style.top = (e.clientY + 15) + 'px';
+            } else {
+                if(lastHoveredPartId) {
+                    highlightMeshState(lastHoveredPartId, false);
+                    lastHoveredPartId = null;
+                }
+                tooltipEl.style.display = 'none';
+            }
+        }
+
+        // Pointer Tap event
+        function handlePointerTap(e) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            
+            // Adapt tap bounds mapping accurately
+            let clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
+            let clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
+            
+            if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return;
+
+            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(independentMeshRegistry);
+
+            if(intersects.length > 0) {
+                const mesh = intersects[0].object;
+                const partKey = meshToPartMap.get(mesh.uuid);
+                const info = partDatabase[partKey];
+
+                if(isMobile) {
+                    // Mobile Bottom HUD processing
+                    selectedHudPartKey = partKey;
+                    document.getElementById('hud-id').innerText = "PART NO: " + info.id;
+                    document.getElementById('hud-name').innerText = info.name;
+                    
+                    const actionBtn = document.getElementById('hud-action-btn');
+                    actionBtn.style.display = 'block';
+                    
+                    // Reset all mesh visual markers emissive glow
+                    independentMeshRegistry.forEach(m => {
+                        m.material.emissive.setHex(0x000000);
+                        m.material.emissiveIntensity = 0;
+                    });
+                    
+                    // Highlight selected item only
+                    mesh.material.emissive.setHex(0x0e639c);
+                    mesh.material.emissiveIntensity = 0.5;
+                    
+                    updateUIState();
+                } else {
+                    // Desktop selection fallback logic
+                    togglePartSelection(partKey);
+                }
+            }
+        }
+
+        // Assign responsive actions binding layout handlers
+        window.addEventListener('mousemove', handlePointerTracking);
+        window.addEventListener('click', handlePointerTap);
+        if(isMobile) {
+            window.addEventListener('touchend', handlePointerTap);
+            
+            // Wire Mobile HUD Button to runtime functions directly
+            document.getElementById('hud-action-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                if(selectedHudPartKey) togglePartSelection(selectedHudPartKey);
+            });
+        }
+
+        // Animation Frame loop
+        function renderLoop() {
+            requestAnimationFrame(renderLoop);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        renderLoop();
+
+        // Handle viewport adjustments gracefully
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
         });
-        
-        scene.add(model);
-        console.log("GLB Model loaded successfully!");
-    }, undefined, function(error) {
-        console.log("GLB not found, using placeholder geometry");
-    });
-}
-
-function onMouseClick(event) {
-    const rect = renderer.domElement.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(parts3D, true);
-    
-    if (intersects.length > 0) {
-        const object = intersects[0].object;
-        let assembly = object.userData.assembly;
-        
-        // If clicked model part, find nearest assembly
-        if (object.userData.isModelPart) {
-            // Try to match by position or use default
-            assembly = findNearestAssembly(object.position);
-        }
-        
-        if (assembly) {
-            highlightAssembly(assembly);
-            showAssemblyParts(assembly);
-        }
-    }
-}
-
-function findNearestAssembly(pos) {
-    // Simple distance-based matching
-    let nearest = 'A';
-    let minDist = Infinity;
-    
-    const centers = {
-        'A': new THREE.Vector3(0, 3, 0),
-        'B': new THREE.Vector3(0, 1, 2),
-        'C': new THREE.Vector3(-3, 2, -1),
-        'D': new THREE.Vector3(0, 0.5, 4),
-        'E': new THREE.Vector3(3, 4, -2),
-        'F': new THREE.Vector3(0, 2.5, 1),
-        'G': new THREE.Vector3(0, 2, 3),
-        'H': new THREE.Vector3(0, 0, 0),
-        'I': new THREE.Vector3(2, 1, 2),
-        'J': new THREE.Vector3(0, 6, 0),
-        'K': new THREE.Vector3(-2, 5, 0),
-        'L': new THREE.Vector3(2, 5, 0),
-        'M': new THREE.Vector3(2, 6, 0)
-    };
-    
-    Object.keys(centers).forEach(key => {
-        const dist = pos.distanceTo(centers[key]);
-        if (dist < minDist) {
-            minDist = dist;
-            nearest = key;
-        }
-    });
-    
-    return nearest;
-}
-
-function onMouseMove(event) {
-    const rect = renderer.domElement.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(parts3D, true);
-    
-    const tooltip = document.getElementById('tooltip');
-    if (intersects.length > 0) {
-        const obj = intersects[0].object;
-        const assembly = obj.userData.assembly || findNearestAssembly(obj.position);
-        if (assembly && assemblies[assembly]) {
-            tooltip.style.display = 'block';
-            tooltip.style.left = event.clientX + 10 + 'px';
-            tooltip.style.top = event.clientY + 10 + 'px';
-            tooltip.textContent = assemblies[assembly].name;
-            renderer.domElement.style.cursor = 'pointer';
-        }
-    } else {
-        tooltip.style.display = 'none';
-        renderer.domElement.style.cursor = 'default';
-    }
-}
-
-function highlightAssembly(assemblyKey) {
-    // Reset all
-    parts3D.forEach(p => {
-        if (p.material) {
-            p.material.emissive = new THREE.Color(0x000000);
-        }
-    });
-    
-    // Highlight selected assembly parts
-    parts3D.forEach(p => {
-        const pAssembly = p.userData.assembly || 
-            (p.userData.isModelPart ? findNearestAssembly(p.position) : null);
-        if (pAssembly === assemblyKey && p.material) {
-            p.material.emissive = new THREE.Color(0x444444);
-        }
-    });
-}
-
-function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
-}
-
-function onWindowResize() {
-    const container = document.getElementById('three-container');
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
-}
-
-function resetView() {
-    camera.position.set(15, 10, 20);
-    controls.target.set(0, 2, 0);
-    controls.update();
-}
-
-function toggleWireframe() {
-    wireframeMode = !wireframeMode;
-    parts3D.forEach(p => {
-        if (p.material) {
-            p.material.wireframe = wireframeMode;
-        }
-    });
-}
-
-// ===== UI FUNCTIONS =====
-let currentFilter = 'all';
-
-function initUI() {
-    // Build assembly list
-    const alist = document.getElementById('assembly-list');
-    Object.keys(assemblies).forEach(key => {
-        const item = document.createElement('div');
-        item.className = 'assembly-item';
-        item.dataset.assembly = key;
-        item.innerHTML = `
-            <div class="assembly-code">${key}</div>
-            <div class="assembly-name">${assemblies[key].name}</div>
-            <div class="assembly-page">Page ${assemblies[key].page}</div>
-        `;
-        item.onclick = () => {
-            document.querySelectorAll('.assembly-item').forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            filterByAssembly(key);
-            highlightAssembly(key);
-        };
-        alist.appendChild(item);
-    });
-    
-    // Build filter buttons
-    const fbtns = document.getElementById('filter-btns');
-    Object.keys(assemblies).forEach(key => {
-        const btn = document.createElement('button');
-        btn.className = 'filter-btn';
-        btn.textContent = key;
-        btn.onclick = function() {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            filterByAssembly(key);
-        };
-        fbtns.appendChild(btn);
-    });
-    
-    renderTable(partsData);
-}
-
-function renderTable(data) {
-    const tbody = document.getElementById('parts-tbody');
-    tbody.innerHTML = '';
-    
-    data.forEach((part, idx) => {
-        const row = document.createElement('tr');
-        row.dataset.index = idx;
-        row.onclick = () => selectPart(part, row);
-        
-        const slClass = part.serviceLevel === 2 ? 'sl-2' : 
-                       part.serviceLevel === 3 ? 'sl-3' : 
-                       part.serviceLevel === 4 ? 'sl-4' : '';
-        const slText = part.serviceLevel !== '-' ? `SL${part.serviceLevel}` : '-';
-        
-        row.innerHTML = `
-            <td class="part-pos">${part.pos}</td>
-            <td>${part.name}<br><span style="font-size:10px;color:#999">${part.desc}</span></td>
-            <td class="part-num">${part.partNum}</td>
-            <td style="text-align:center">
-                ${part.qty}
-                <span class="service-badge ${slClass}" style="margin-left:4px">${slText}</span>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-function selectPart(part, rowElement) {
-    // Highlight row
-    document.querySelectorAll('#parts-tbody tr').forEach(r => r.classList.remove('selected'));
-    if (rowElement) rowElement.classList.add('selected');
-    
-    // Show popup
-    const popup = document.getElementById('part-popup');
-    document.getElementById('popup-pos').textContent = 'Pos. ' + part.pos;
-    document.getElementById('popup-name').textContent = part.name;
-    document.getElementById('popup-desc').textContent = part.desc;
-    document.getElementById('popup-partnum').textContent = part.partNum;
-    document.getElementById('popup-qty').textContent = part.qty;
-    
-    const slColors = { 2: '#e65100', 3: '#2e7d32', 4: '#1565c0' };
-    const slText = part.serviceLevel !== '-' ? 
-        `<span style="background:${slColors[part.serviceLevel]||'#999'};color:white;padding:2px 8px;border-radius:4px;font-size:12px">Level ${part.serviceLevel}</span>` : 
-        '<span style="color:#999">-</span>';
-    document.getElementById('popup-level').innerHTML = slText;
-    
-    const asm = assemblies[part.assembly];
-    document.getElementById('popup-assembly').innerHTML = 
-        `<strong>${part.assembly}</strong> - ${asm ? asm.name : 'Unknown'} <span style="color:#999">(PDF p.${asm?asm.page:'-'})</span>`;
-    
-    popup.classList.add('show');
-    
-    // Highlight in 3D
-    highlightAssembly(part.assembly);
-}
-
-function closePopup() {
-    document.getElementById('part-popup').classList.remove('show');
-}
-
-function filterParts() {
-    const search = document.getElementById('search-input').value.toLowerCase();
-    let filtered = partsData;
-    
-    if (currentFilter !== 'all') {
-        filtered = filtered.filter(p => p.assembly === currentFilter || 
-            (currentFilter === 'D' && ['D1','D2','D3'].includes(p.assembly)) ||
-            (currentFilter === 'G' && ['G1','G2'].includes(p.assembly)));
-    }
-    
-    if (search) {
-        filtered = filtered.filter(p => 
-            p.name.toLowerCase().includes(search) || 
-            p.partNum.toLowerCase().includes(search) ||
-            p.desc.toLowerCase().includes(search)
-        );
-    }
-    
-    renderTable(filtered);
-}
-
-function filterByAssembly(assembly) {
-    currentFilter = assembly;
-    document.querySelectorAll('.filter-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.assembly === assembly || 
-            (assembly === 'all' && b.textContent === 'All'));
-    });
-    filterParts();
-}
-
-function showAssemblyParts(assembly) {
-    currentFilter = assembly;
-    document.getElementById('search-input').value = '';
-    filterParts();
-    
-    // Update filter buttons
-    document.querySelectorAll('.filter-btn').forEach(b => {
-        b.classList.remove('active');
-        if (b.textContent === assembly) b.classList.add('active');
-    });
-}
-
-// Initialize
-initThree();
-initUI();
-</script>
+    </script>
 </body>
 </html>
+'''
+
+with open('/mnt/agents/output/3d_catalog_responsive.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("✅ บันทึกไฟล์ที่ปรับปรุงระบบ Mobile และลดการกระพริบเรียบร้อยแล้ว!")
