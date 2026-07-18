@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional 3D Spare Part Catalog - Independent Selection</title>
+    <title>Professional 3D Spare Part Catalog - Refined Fix</title>
     <style>
         html, body {
             margin: 0;
@@ -193,7 +193,7 @@
 
         <!-- ฝั่งแผงควบคุมและรายการด้านข้าง -->
         <div id="sidebar">
-            <div class="sidebar-header">ALPHA COMPACT LH / RH</div>[cite: 1]
+            <div class="sidebar-header">ALPHA COMPACT LH / RH</div>
             
             <div class="section-title">Available Parts (Hover/Select)</div>
             <div id="parts-list"></div>
@@ -229,7 +229,7 @@
             }
         }
 
-        // เมื่อมีการคลิกติ๊กถูกที่กล่องสี่เหลี่ยมด้านข้าง จึงจะเพิ่มรายการลงในช่องรายการด้านล่าง
+        // เมื่อคลิกติ๊กถูกที่กล่องสี่เหลี่ยม ข้อมูลจึงจะยอมเด้งไปโชว์ที่กล่องลิสต์ด้านล่าง
         function togglePart(uniqueId, isChecked) {
             if (isChecked) {
                 if (!selectedPartsCart[uniqueId]) {
@@ -260,7 +260,6 @@
             updateCartUI();
         }
 
-        // แสดงผลเฉพาะรายการอะไหล่ที่ถูกเลือก (ติ๊กถูก) เท่านั้น
         function updateCartUI() {
             const cartListUI = document.getElementById('cart-list');
             cartListUI.innerHTML = '';
@@ -306,11 +305,12 @@
         dirLight.position.set(15, 30, 20);
         scene.add(dirLight);
 
-        // รายการคีย์ข้อมูลจำลองสำหรับชิ้นส่วนแกนและชิ้นส่วนหลัก
+        // รายการคีย์ข้อมูลจำลองหลักๆ
         const sampleDescriptions = [
-            "Cover Alpha Compact", "Drive roller rubber 120mm", "Rewinder Plate", "Unwind core 3\"",[cite: 1]
-            "Timing belt", "Pulley 14-T5", "Main Drive Motor", "Hand protection", "Dancer complete",[cite: 1]
-            "Rewinder shaft", "Round belt", "Label sensor OGUTI", "Label sensor USGT", "Clamp"[cite: 1]
+            "Chassis Base Unit", "Drive roller rubber 120mm", "Rewinder Plate Main", "Unwind core 3\" Axle",
+            "Timing belt unit", "Pulley 14-T5 Engine", "Main Drive Motor Unit", "Hand protection cover", 
+            "Dancer complete system", "Rewinder shaft core", "Round belt transmission", "Label sensor OGUTI", 
+            "Label sensor USGT", "Clamp component block"
         ];
 
         // โหลดโมเดล 3D
@@ -327,49 +327,47 @@
             loadedModel.position.y += (loadedModel.position.y - center.y);
             loadedModel.position.z += (loadedModel.position.z - center.z);
             
-            let meshCounter = 1;
+            let groupCounter = 1;
             
-            // ลอการิทึมสแกนโครงสร้างเชิงลึกเพื่อบังคับตัดไดคัต (Mesh Isolation Logic) แยกเดี่ยวชิ้นต่อชิ้น
-            loadedModel.traverse((child) => {
-                if (child.isMesh) {
-                    // สร้าง Material สำเนาแยกขาดจากวัตถุชิ้นอื่น ป้องกันปัญหาสีไฮไลท์วิ่งไปโดนจุดที่แชร์ Material ร่วมกัน
-                    if (child.material) {
+            // ลอการิทึมจำแนกชิ้นส่วนระดับกลุ่มก้อน (Group Isolation Logic) 
+            // แก้ไขปัญหาการคลิกเลือกชิ้นงานแล้วไฮไลท์ลามไปโดนแผ่นอื่น
+            loadedModel.children.forEach((groupObj) => {
+                // ตรวจหา ID ระดับกลุ่มหลักเพื่อทำไดคัตแยกขาดชิ้นต่อชิ้น
+                let targetKey = groupObj.uuid;
+                groupObj.name = targetKey;
+
+                // วนลูปโคลน Material ภายในกลุ่ม เพื่อไม่ให้วัตถุแชร์สีร่วมกันเวลาโดน Hover
+                groupObj.traverse((child) => {
+                    if (child.isMesh && child.material) {
                         child.material = child.material.clone();
                     }
-                    
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                    
-                    // วิเคราะห์และออกรหัสภายในเฉพาะชิ้น (UUID-Based Isolation) ป้องกันปัญหาการจัดกลุ่มชนกัน
-                    let targetKey = child.uuid;
-                    child.name = targetKey;
-                    
-                    let sampleDesc = sampleDescriptions[meshCounter - 1] || ("Component Part " + meshCounter);
-                    let samplePN = "4000" + String(3200 + meshCounter);
-                    
-                    // ลงทะเบียนจับคู่ชิ้นส่วนแบบ 1-to-1 แยกขาดจากกันเด็ดขาด
-                    partDatabase[targetKey] = {
-                        id: samplePN,
-                        name: sampleDesc,
-                        img: "https://via.placeholder.com/200x120/ffffff/000000?text=Part+" + meshCounter
-                    };
-                    
-                    meshCounter++;
-                }
+                });
+
+                let sampleDesc = sampleDescriptions[groupCounter - 1] || ("Assembly Group Part " + groupCounter);
+                let samplePN = "4000" + String(3200 + groupCounter);
+                
+                // ลงทะเบียนคลังสินค้าแยกชิ้นเดี่ยว
+                partDatabase[targetKey] = {
+                    id: samplePN,
+                    name: sampleDesc,
+                    img: "https://via.placeholder.com/200x120/ffffff/000000?text=Part+" + groupCounter
+                };
+                
+                groupCounter++;
             });
 
             buildPartsListUI();
             scene.add(loadedModel);
         });
 
-        // ================= ระบบ Raycasting (เมาส์ชี้ และ คลิกเลือกกล่องสี่เหลี่ยมด้านข้าง) =================
+        // ================= ระบบ Raycasting (เมาส์ชี้ และ คลิกเปิดเช็คบ็อกซ์) =================
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const tooltip = document.getElementById('tooltip');
         const tooltipImg = document.getElementById('tooltip-img');
         const tooltipId = document.getElementById('tooltip-id');
         const tooltipName = document.getElementById('tooltip-name');
-        let intersectedObject = null;
+        let currentHighlightedGroup = null;
 
         window.addEventListener('mousemove', onMouseMove, false);
         window.addEventListener('click', onModelClick, false);
@@ -384,20 +382,32 @@
 
             if (loadedModel) {
                 raycaster.setFromCamera(mouse, camera);
+                // ตรวจจับชนวัตถุระดับกลุ่มโครงสร้างหลัก (children) แทนตัวลูกย่อยลึกๆ
                 const intersects = raycaster.intersectObjects(loadedModel.children, true);
 
                 if (intersects.length > 0) {
-                    const hitObj = intersects[0].object;
+                    // หาออบเจกต์ระดับกลุ่มที่อยู่ภายใต้โมเดลหลักโดยตรง
+                    let topGroup = intersects[0].object;
+                    while (topGroup.parent && topGroup.parent !== loadedModel) {
+                        topGroup = topGroup.parent;
+                    }
                     
-                    if (partDatabase[hitObj.name]) {
-                        if (intersectedObject !== hitObj) {
-                            if (intersectedObject) intersectedObject.material.emissive.setHex(0x000000);
+                    if (partDatabase[topGroup.name]) {
+                        if (currentHighlightedGroup !== topGroup) {
+                            // ปิดสีเอฟเฟกต์เก่า
+                            if (currentHighlightedGroup) {
+                                currentHighlightedGroup.traverse((node) => {
+                                    if (node.isMesh) node.material.emissive.setHex(0x000000);
+                                });
+                            }
                             
-                            intersectedObject = hitObj;
-                            // ไฮไลท์เรืองแสงสีฟ้าเฉพาะชิ้นเดี่ยวที่เมาส์ส่องถึงอย่างแม่นยำ
-                            intersectedObject.material.emissive.setHex(0x0e639c);
+                            currentHighlightedGroup = topGroup;
+                            // เปิดเอฟเฟกต์สีฟ้าเฉพาะกลุ่มก้อนชิ้นเดี่ยวที่เมาส์ส่องชน
+                            currentHighlightedGroup.traverse((node) => {
+                                if (node.isMesh) node.material.emissive.setHex(0x0e639c);
+                            });
 
-                            const pInfo = partDatabase[hitObj.name];
+                            const pInfo = partDatabase[topGroup.name];
                             tooltipImg.src = pInfo.img;
                             tooltipId.innerText = "PART NO: " + pInfo.id;
                             tooltipName.innerText = pInfo.name;
@@ -405,8 +415,12 @@
                         }
                     }
                 } else {
-                    if (intersectedObject) intersectedObject.material.emissive.setHex(0x000000);
-                    intersectedObject = null;
+                    if (currentHighlightedGroup) {
+                        currentHighlightedGroup.traverse((node) => {
+                            if (node.isMesh) node.material.emissive.setHex(0x000000);
+                        });
+                    }
+                    currentHighlightedGroup = null;
                     tooltip.style.display = 'none';
                 }
             }
@@ -423,13 +437,16 @@
                 const intersects = raycaster.intersectObjects(loadedModel.children, true);
 
                 if (intersects.length > 0) {
-                    const hitObj = intersects[0].object;
-                    const uniqueId = hitObj.name;
+                    let topGroup = intersects[0].object;
+                    while (topGroup.parent && topGroup.parent !== loadedModel) {
+                        topGroup = topGroup.parent;
+                    }
                     
+                    const uniqueId = topGroup.name;
                     if (partDatabase[uniqueId]) {
                         const cb = document.getElementById(`check-${uniqueId}`);
                         if (cb) {
-                            // การกดที่โมเดล 3D จะเปลี่ยนไปทำหน้าที่ "ติ๊กถูกให้กล่องสี่เหลี่ยมฝั่งขวา" ก่อน จากนั้นพาร์ทลิสต์จึงจะโชว์ด้านล่าง
+                            // คลิกที่โมเดล 3D จะสลับเปลี่ยนสถานะติ๊กถูกฝั่งขวาก่อน จากนั้นลิสต์พาร์ทจะคำนวณลงไปแสดงด้านล่าง
                             cb.checked = !cb.checked;
                             togglePart(uniqueId, cb.checked);
                         }
