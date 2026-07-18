@@ -3,10 +3,37 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Model Viewer</title>
+    <title>3D Model Viewer with Parts List</title>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background-color: #f0f0f0; }
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #f0f0f0; font-family: sans-serif; }
         canvas { width: 100vw; height: 100vh; display: block; }
+        
+        /* เพิ่มสไตล์สำหรับแสดงรายการพาร์ทอะไหล่ */
+        #parts-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            max-height: 85vh;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            overflow-y: auto;
+            border: 1px solid #ccc;
+        }
+        h3 { margin-top: 0; color: #333; border-bottom: 2px solid #0056b3; padding-bottom: 5px; }
+        .section-title { font-weight: bold; color: #0056b3; margin-top: 15px; margin-bottom: 5px; font-size: 14px; }
+        .part-item { 
+            padding: 6px 8px; 
+            margin-bottom: 4px; 
+            background: #f9f9f9; 
+            border-left: 3px solid #666; 
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .part-number { font-family: monospace; font-weight: bold; color: #d9534f; }
     </style>
     <!-- โหลด Three.js และ OrbitControls สำหรับหมุนมุมมอง -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -14,6 +41,34 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
+
+    <!-- แผงข้อมูลรหัสอะไหล่ (Parts List Panel) -->
+    <div id="parts-panel">
+        <h3>Alpha Compact RH 120</h3>
+        
+        <div class="section-title">Chassis / Main Components</div>
+        <div class="part-item"><span>Cover with Controller RH</span> <span class="part-number">40003271</span></div>
+        <div class="part-item"><span>Cover Alpha Compact</span> <span class="part-number">32912434</span></div>
+        <div class="part-item"><span>Plate Connector Rear RH</span> <span class="part-number">32910036</span></div>
+        <div class="part-item"><span>Plate Connector Front RH</span> <span class="part-number">32910035</span></div>
+        <div class="part-item"><span>CPU/IO-Board</span> <span class="part-number">33016858</span></div>
+        <div class="part-item"><span>Motor-Board</span> <span class="part-number">33016788</span></div>
+        <div class="part-item"><span>Power Pack RH</span> <span class="part-number">40003269</span></div>
+
+        <div class="section-title">Transport Station Components</div>
+        <div class="part-item"><span>Drive Roller Corund 120mm</span> <span class="part-number">32901023</span></div>
+        <div class="part-item"><span>Drive Roller Rubber 120mm</span> <span class="part-number">32901027</span></div>
+        <div class="part-item"><span>Friction Pulley Complete</span> <span class="part-number">35080005</span></div>
+        <div class="part-item"><span>Timing Belt</span> <span class="part-number">33001631</span></div>
+        <div class="part-item"><span>Motor Drive 120-150mm</span> <span class="part-number">35001790</span></div>
+
+        <div class="section-title">Dispensing & Options</div>
+        <div class="part-item"><span>Eccentric Support 120mm</span> <span class="part-number">35080040</span></div>
+        <div class="part-item"><span>Swinging Support Plate RH</span> <span class="part-number">35080041</span></div>
+        <div class="part-item"><span>Applicator Sheet 140x60mm</span> <span class="part-number">33001952</span></div>
+        <div class="part-item"><span>Terminal Panel (Dual Knob)</span> <span class="part-number">33016789</span></div>
+        <div class="part-item"><span>Label Sensor (Oguti)</span> <span class="part-number">33090245</span></div>
+    </div>
 
     <script>
         // 1. สร้าง Scene, Camera, และ Renderer
@@ -43,8 +98,6 @@
 
         // 4. โหลดไฟล์โมเดล .glb ที่อยู่ในโฟลเดอร์เดียวกัน
         const loader = new THREE.GLTFLoader();
-
-        // แก้ไขให้ตรงกับชื่อไฟล์บน GitHub เรียบร้อยแล้ว (ใช้จุดตรง RH.step)
         const filename = "32100033_A_Comp_120_RH.step.glb";
 
         loader.load(filename, function (gltf) {
