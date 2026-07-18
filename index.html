@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional 3D Spare Part Catalog - Individual Fix</title>
+    <title>Professional 3D Spare Part Catalog - Definitive Hotspots</title>
     <style>
         html, body {
             margin: 0;
@@ -23,7 +23,7 @@
             position: relative;
         }
 
-        /* หน้าจอแสดงผล 3D (75%) */
+        /* หน้าจอสตูดิโอ 3D (75%) */
         #canvas-container {
             width: 75vw;
             height: 100vh;
@@ -34,10 +34,9 @@
             width: 100% !important;
             height: 100% !important;
             display: block;
-            cursor: pointer;
         }
 
-        /* Sidebar รายการด้านข้าง (25%) */
+        /* Sidebar แผงควบคุมคลังสินค้าด้านขวา (25%) */
         #sidebar {
             width: 25vw;
             height: 100vh;
@@ -95,7 +94,7 @@
         .part-id { font-size: 0.75rem; color: #0e639c; font-weight: bold; }
         .part-name { font-size: 0.9rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
 
-        /* ตะกร้าสรุปรายการสั่งอะไหล่ด้านล่าง */
+        /* ตะกร้าสรุปรายการสั่งซื้อด้านล่าง (Cart) */
         #cart-container {
             height: 40vh;
             background-color: #1e1e1e;
@@ -148,7 +147,7 @@
             border-radius: 3px;
         }
 
-        /* Tooltip โผล่ตามตำแหน่งเมาส์ชี้ */
+        /* Tooltip กล่องป๊อปอัปเมื่อชี้หมุด */
         #tooltip {
             position: fixed;
             display: none;
@@ -182,7 +181,7 @@
 
     <div class="wrapper">
         
-        <!-- ฝั่งหน้าจอ 3D -->
+        <!-- ฝั่งหน้าจอแสดงผล 3D -->
         <div id="canvas-container">
             <div id="tooltip">
                 <img id="tooltip-img" src="" alt="Part Image">
@@ -191,7 +190,7 @@
             </div>
         </div>
 
-        <!-- ฝั่งแผงควบคุมและรายการด้านข้าง -->
+        <!-- แผง Sidebar ควบคุมข้อมูลฝั่งขวา -->
         <div id="sidebar">
             <div class="sidebar-header">ALPHA COMPACT LH / RH</div>
             
@@ -207,55 +206,58 @@
     </div>
 
     <script>
-        let partDatabase = {};
-        let selectedPartsCart = {};
-        let targetMeshList = []; // เก็บเฉพาะวัตถุผิวตาข่ายเดี่ยว (Mesh) สำหรับใช้คำสั่งตรวจจับ Raycaster
+        // 1. ตารางคลังข้อมูลอะไหล่แยกชิ้นเดี่ยวอิงตามสเปกเฉดสีและคู่มือจริง
+        const partDatabase = {
+            "Part_Unwinder": { id: "35001802", name: "Unwinder disc / จานม้วนบน", pos: {x: -2, y: 10, z: 2}, img: "https://via.placeholder.com/200x120/ffffff/000000?text=Unwinder+Disc" },
+            "Part_Drive_Roller": { id: "32901027", name: "Drive roller rubber / ลูกกลิ้งยาง", pos: {x: 1, y: 2, z: 4}, img: "https://via.placeholder.com/200x120/ffffff/000000?text=Drive+Roller" },
+            "Part_Tension_Bar": { id: "35001871", name: "Unwinder roller / แกนประคองดำ", pos: {x: 2, y: 5, z: 1}, img: "https://via.placeholder.com/200x120/ffffff/000000?text=Tension+Bar" },
+            "Part_Label_Sensor": { id: "33090245", name: "Label sensor / เซนเซอร์ตรวจจับฉลาก", pos: {x: -1, y: 0, z: 3}, img: "https://via.placeholder.com/200x120/ffffff/000000?text=Label+Sensor" },
+            "Part_Brass_Sheet": { id: "35001414", name: "Spring sheet / แผ่นทองเหลืองนำร่อง", pos: {x: -0.5, y: 1.5, z: 4}, img: "https://via.placeholder.com/200x120/ffffff/000000?text=Spring+Sheet" },
+            "Part_Peeler_Plate": { id: "32910403", name: "Applicator sheet / แผ่นสลัดฉลากล่าง", pos: {x: -3, y: -4, z: 5}, img: "https://via.placeholder.com/200x120/ffffff/000000?text=Peeler+Plate" }
+        };
 
-        // ฟังก์ชันวาดรายการสินค้าชิ้นส่วนในแผงเมนูด้านขวา
-        function buildPartsListUI() {
-            const partsListUI = document.getElementById('parts-list');
-            partsListUI.innerHTML = '';
-            
-            for (const [uniqueId, info] of Object.entries(partDatabase)) {
-                const item = document.createElement('div');
-                item.className = 'part-item';
-                item.innerHTML = `
-                    <div class="part-info">
-                        <span class="part-id">P/N: ${info.id}</span>
-                        <span class="part-name">${info.name}</span>
-                    </div>
-                    <input type="checkbox" id="check-${uniqueId}" onchange="togglePart('${uniqueId}', this.checked)">
-                `;
-                partsListUI.appendChild(item);
-            }
+        let selectedPartsCart = {};
+        let hotspotMeshes = []; // อาเรย์สำหรับเก็บหมุดอัจฉริยะแยกอิสระ
+
+        // สร้างรายการพาร์ทในแผงเมนูด้านขวา
+        const partsListUI = document.getElementById('parts-list');
+        for (const [keyId, info] of Object.entries(partDatabase)) {
+            const item = document.createElement('div');
+            item.className = 'part-item';
+            item.innerHTML = `
+                <div class="part-info">
+                    <span class="part-id">P/N: ${info.id}</span>
+                    <span class="part-name">${info.name}</span>
+                </div>
+                <input type="checkbox" id="check-${keyId}" onchange="togglePart('${keyId}', this.checked)">
+            `;
+            partsListUI.appendChild(item);
         }
 
-        function togglePart(uniqueId, isChecked) {
+        function togglePart(keyId, isChecked) {
             if (isChecked) {
-                if (!selectedPartsCart[uniqueId]) {
-                    selectedPartsCart[uniqueId] = 1;
-                }
+                if (!selectedPartsCart[keyId]) selectedPartsCart[keyId] = 1;
             } else {
-                delete selectedPartsCart[uniqueId];
+                delete selectedPartsCart[keyId];
             }
             updateCartUI();
         }
 
-        function adjustQty(uniqueId, change) {
-            if (selectedPartsCart[uniqueId]) {
-                selectedPartsCart[uniqueId] += change;
-                if (selectedPartsCart[uniqueId] <= 0) {
-                    delete selectedPartsCart[uniqueId];
-                    const cb = document.getElementById(`check-${uniqueId}`);
+        function adjustQty(keyId, change) {
+            if (selectedPartsCart[keyId]) {
+                selectedPartsCart[keyId] += change;
+                if (selectedPartsCart[keyId] <= 0) {
+                    delete selectedPartsCart[keyId];
+                    const cb = document.getElementById(`check-${keyId}`);
                     if(cb) cb.checked = false;
                 }
                 updateCartUI();
             }
         }
 
-        function removePart(uniqueId) {
-            delete selectedPartsCart[uniqueId];
-            const cb = document.getElementById(`check-${uniqueId}`);
+        function removePart(keyId) {
+            delete selectedPartsCart[keyId];
+            const cb = document.getElementById(`check-${keyId}`);
             if(cb) cb.checked = false;
             updateCartUI();
         }
@@ -264,8 +266,8 @@
             const cartListUI = document.getElementById('cart-list');
             cartListUI.innerHTML = '';
             
-            for (const [uniqueId, qty] of Object.entries(selectedPartsCart)) {
-                const info = partDatabase[uniqueId];
+            for (const [keyId, qty] of Object.entries(selectedPartsCart)) {
+                const info = partDatabase[keyId];
                 const item = document.createElement('div');
                 item.className = 'cart-item';
                 item.innerHTML = `
@@ -274,23 +276,23 @@
                         <span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${info.name}</span>
                     </div>
                     <div class="qty-controls">
-                        <button class="btn-qty" onclick="adjustQty('${uniqueId}', -1)">-</button>
+                        <button class="btn-qty" onclick="adjustQty('${keyId}', -1)">-</button>
                         <span>${qty}</span>
-                        <button class="btn-qty" onclick="adjustQty('${uniqueId}', 1)">+</button>
-                        <button class="btn-remove" onclick="removePart('${uniqueId}')">✕</button>
+                        <button class="btn-qty" onclick="adjustQty('${keyId}', 1)">+</button>
+                        <button class="btn-remove" onclick="removePart('${keyId}')">✕</button>
                     </div>
                 `;
                 cartListUI.appendChild(item);
             }
         }
 
-        // ================= เอนจิ้นหลัก Three.js =================
+        // ================= เอนจิ้นกราฟิก Three.js =================
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x222222);
 
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, 15, 35);
+        camera.position.set(0, 8, 30);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -305,71 +307,54 @@
         dirLight.position.set(15, 30, 20);
         scene.add(dirLight);
 
-        // รายการคีย์ชื่ออะไหล่ตั้งต้นจากคู่มือ Alpha Compact สำหรับหยอดแสดงผล
-        const sampleDescriptions = [
-            "Chassis Base Unit Frame", "Drive roller rubber 120mm", "Rewinder Plate Main Disk", "Unwind core 3\" Axle",[cite: 1]
-            "Timing belt motor chain", "Pulley 14-T5 Gear", "Main Drive Motor Core", "Hand protection sheet",[cite: 1]
-            "Dancer stabilization system", "Rewinder shaft core steel", "Round belt loop drive", "Label sensor OGUTI",[cite: 1]
-            "Label sensor USGT Ultrasonic", "Clamp component hardware"[cite: 1]
-        ];
-
-        // โหลดโมเดล 3D (.glb) จากระบบคลังโฟลเดอร์
+        // โหลดโมเดลหลักชิ้นผืนเดียวกันเข้ามาแสดงผล
         const filename = "32100033_A_Comp_120_RH.step.glb";
         const loader = new THREE.GLTFLoader();
-        let loadedModel;
         
         loader.load(filename, function (gltf) {
-            loadedModel = gltf.scene;
+            const model = gltf.scene;
             
-            const box = new THREE.Box3().setFromObject(loadedModel);
+            const box = new THREE.Box3().setFromObject(model);
             const center = box.getCenter(new THREE.Vector3());
-            loadedModel.position.x += (loadedModel.position.x - center.x);
-            loadedModel.position.y += (loadedModel.position.y - center.y);
-            loadedModel.position.z += (loadedModel.position.z - center.z);
+            model.position.x += (model.position.x - center.x);
+            model.position.y += (model.position.y - center.y);
+            model.position.z += (model.position.z - center.z);
             
-            let counter = 1;
-            
-            // ใช้ลอการิทึมเจาะทะลุชั้นกลุ่มโมเดล (Deep Traversal Isolation) เพื่อจับชิ้นส่วนระดับ Mesh ขาดจากกันเด็ดขาด
-            loadedModel.traverse((node) => {
-                if (node.isMesh) {
-                    // บังคับโคลนแยกแยะวัตถุออกจากกลุ่มใหญ่ ป้องกันปัญหาสีไฮไลท์วิ่งติดลามไปทั้งตัวเครื่อง
-                    node.material = node.material.clone();
-                    node.castShadow = true;
-                    node.receiveShadow = true;
-                    
-                    // ฝังรหัสลับเฉพาะตัว UUID เพื่อบังคับชิ้นใครชิ้นมัน 100%
-                    let meshKey = node.uuid;
-                    node.name = meshKey;
-                    
-                    // ดึงเข้าคลังอาร์เรย์อิสระสำหรับรอรับแรงแสง Raycaster ยิงตรวจสอบพิกัด
-                    targetMeshList.push(node);
+            scene.add(model);
 
-                    let labelDesc = sampleDescriptions[counter - 1] || ("Component Part Unit " + counter);
-                    let labelPN = "4000" + String(3200 + counter);
-                    
-                    // ลงคลังฐานข้อมูลกลางสินค้าแบบไม่แชร์ร่วมกับส่วนอื่น
-                    partDatabase[meshKey] = {
-                        id: labelPN,
-                        name: labelDesc,
-                        img: "https://via.placeholder.com/200x120/ffffff/000000?text=Part+" + counter
-                    };
-                    
-                    counter++;
-                }
-            });
-
-            buildPartsListUI();
-            scene.add(loadedModel);
+            // เมื่อตัวเครื่องโหลดเสร็จ ทำการสร้างหมุดอัจฉริยะลอยเหนือเฉดสีตามพิกัดโครงสร้าง
+            createVectorHotspots();
         });
 
-        // ================= ระบบตรวจจับพิกัดเมาส์ (Raycasting ชิ้นเดี่ยว 100%) =================
+        // ฟังก์ชันคำนวณและปักหมุดเรืองแสงอัจฉริยะแยกชิ้นอิสระ 100%
+        function createVectorHotspots() {
+            for (const [keyId, info] of Object.entries(partDatabase)) {
+                // สร้างรูปทรงกลมขนาดกำลังดีเป็นตัวแทนหมุด
+                const geometry = new THREE.SphereGeometry(0.4, 32, 32);
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0x0e639c,
+                    transparent: true,
+                    opacity: 0.85
+                });
+                const sphere = new THREE.Mesh(geometry, material);
+                
+                // สั่งจัดวางพิกัดให้อยู่ตรงตำแหน่งเฉดสีชิ้นส่วนนั้นๆ
+                sphere.position.set(info.pos.x, info.pos.y, info.pos.z);
+                sphere.name = keyId; // ฝังคีย์ระบุรหัสอะไหล่เฉพาะตัว
+                
+                scene.add(sphere);
+                hotspotMeshes.push(sphere); // บันทึกเข้าอาเรย์แยกเช็คจุดชน
+            }
+        }
+
+        // ================= ระบบการตรวจจับเมาส์ยิงตรงไปที่ตัวหมุด (Hotspot Raycasting) =================
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const tooltip = document.getElementById('tooltip');
         const tooltipImg = document.getElementById('tooltip-img');
         const tooltipId = document.getElementById('tooltip-id');
         const tooltipName = document.getElementById('tooltip-name');
-        let currentlySelectedMesh = null;
+        let activeHoveredHotspot = null;
 
         window.addEventListener('mousemove', onMouseMove, false);
         window.addEventListener('click', onModelClick, false);
@@ -382,34 +367,29 @@
             tooltip.style.left = (event.clientX + 15) + 'px';
             tooltip.style.top = (event.clientY + 15) + 'px';
 
-            if (targetMeshList.length > 0) {
+            if (hotspotMeshes.length > 0) {
                 raycaster.setFromCamera(mouse, camera);
-                // สั่งการให้ Raycaster ยิงแสงชนไปที่วัตถุคลัง Mesh อิสระ (targetMeshList) ตรงๆ โดยไม่เช็ค Group ชั้นนอก 
-                // วิธีนี้จะแก้ไขปัญหาการเรืองแสงลามติดไปเนื้อเดียวกันทั้งตัวเครื่องได้อย่างถาวรครับ
-                const intersects = raycaster.intersectObjects(targetMeshList, false);
+                // สั่งการให้ Raycaster ตรวจสอบพิกัดการชนพุ่งเป้าไปที่กลุ่มตัวหมุด Hotspot เท่านั้น ป้องกันปัญหาสีรวมร่างกันทั้งเครื่อง
+                const intersects = raycaster.intersectObjects(hotspotMeshes);
 
                 if (intersects.length > 0) {
-                    const hitMesh = intersects[0].object;
+                    const hitHotspot = intersects[0].object;
                     
-                    if (partDatabase[hitMesh.name]) {
-                        if (currentlySelectedMesh !== hitMesh) {
-                            // ปิดสีไฮไลท์ชิ้นส่วนเก่า
-                            if (currentlySelectedMesh) currentlySelectedMesh.material.emissive.setHex(0x000000);
-                            
-                            currentlySelectedMesh = hitMesh;
-                            // ไฮไลท์สีฟ้าเรืองแสงเฉพาะเจาะจงเฉพาะชิ้นเดี่ยวที่คุณชี้เท่านั้น!
-                            currentlySelectedMesh.material.emissive.setHex(0x0e639c);
+                    if (activeHoveredHotspot !== hitHotspot) {
+                        if (activeHoveredHotspot) activeHoveredHotspot.material.color.setHex(0x0e639c); // คืนสีเดิม
+                        
+                        activeHoveredHotspot = hitHotspot;
+                        activeHoveredHotspot.material.color.setHex(0x00ffcc); // ส่องแสงสีเขียวเรืองแสงเมื่อเมาส์ชี้โดนตัวหมุด
 
-                            const pInfo = partDatabase[hitMesh.name];
-                            tooltipImg.src = pInfo.img;
-                            tooltipId.innerText = "PART NO: " + pInfo.id;
-                            tooltipName.innerText = pInfo.name;
-                            tooltip.style.display = 'block';
-                        }
+                        const pInfo = partDatabase[hitHotspot.name];
+                        tooltipImg.src = pInfo.img;
+                        tooltipId.innerText = "PART NO: " + pInfo.id;
+                        tooltipName.innerText = pInfo.name;
+                        tooltip.style.display = 'block';
                     }
                 } else {
-                    if (currentlySelectedMesh) currentlySelectedMesh.material.emissive.setHex(0x000000);
-                    currentlySelectedMesh = null;
+                    if (activeHoveredHotspot) activeHoveredHotspot.material.color.setHex(0x0e639c);
+                    activeHoveredHotspot = null;
                     tooltip.style.display = 'none';
                 }
             }
@@ -421,20 +401,20 @@
                 return;
             }
 
-            if (targetMeshList.length > 0) {
+            if (hotspotMeshes.length > 0) {
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(targetMeshList, false);
+                const intersects = raycaster.intersectObjects(hotspotMeshes);
 
                 if (intersects.length > 0) {
-                    const hitMesh = intersects[0].object;
-                    const uniqueId = hitMesh.name;
+                    const hitHotspot = intersects[0].object;
+                    const keyId = hitHotspot.name;
                     
-                    if (partDatabase[uniqueId]) {
-                        const cb = document.getElementById(`check-${uniqueId}`);
+                    if (partDatabase[keyId]) {
+                        const cb = document.getElementById(`check-${keyId}`);
                         if (cb) {
-                            // การคลิกชิ้นส่วนจะทำหน้าที่ "ติ๊กเครื่องหมายถูกฝั่งขวาให้ทำงาน" จากนั้นข้อมูลจะรันเข้าตะกร้าสั่งอะไหล่ด้านล่างทันที
+                            // สลับสถานะติ๊กเครื่องหมายถูกที่กล่องสี่เหลี่ยมด้านขวา และสั่งรันข้อมูลพาร์ทลิสต์ลงกล่องด้านล่างทันที
                             cb.checked = !cb.checked;
-                            togglePart(uniqueId, cb.checked);
+                            togglePart(keyId, cb.checked);
                         }
                     }
                 }
