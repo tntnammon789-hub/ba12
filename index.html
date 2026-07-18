@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enterprise 3D Spare Part Catalog - Alpha Compact LH/RH</title>
     <style>
-        /* จัดระเบียบหน้าจอดิจิทัลทวินสไตล์พรีเมียม */
         html, body {
             margin: 0;
             padding: 0;
@@ -24,7 +23,6 @@
             position: relative;
         }
 
-        /* หน้าจอกราฟิก 3D สตูดิโอ (75%) */
         #canvas-container {
             width: 75vw;
             height: 100vh;
@@ -38,7 +36,6 @@
             display: block;
         }
 
-        /* แผงควบคุมและรายการแคตตาล็อกด้านขวา (25%) */
         #sidebar {
             width: 25vw;
             height: 100vh;
@@ -74,7 +71,6 @@
             border-top: 1px solid #2d2d2d;
         }
 
-        /* รายการชิ้นส่วนพร้อมระบุสถานะและรหัส */
         #parts-list {
             flex: 1;
             overflow-y: auto;
@@ -86,26 +82,32 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background-color: #252526;
+            background: linear-gradient(135deg, #252526 0%, #2a2a2c 100%);
             margin-bottom: 10px;
             padding: 12px 14px;
-            border-radius: 6px;
+            border-radius: 8px;
             border: 1px solid #333333;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
         }
 
         .part-item:hover {
             border-color: #0e639c;
-            background-color: #2d2d30;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            background: linear-gradient(135deg, #2d2d30 0%, #333338 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3), 0 0 0 1px rgba(14, 99, 156, 0.3);
         }
 
-        .part-info { display: flex; flex-direction: column; max-width: 80%; }
+        .part-item.active-part {
+            border-color: #0e639c;
+            background: linear-gradient(135deg, #0e2a3f 0%, #1a3a52 100%);
+            box-shadow: 0 0 15px rgba(14, 99, 156, 0.4), inset 0 0 20px rgba(14, 99, 156, 0.1);
+        }
+
+        .part-info { display: flex; flex-direction: column; max-width: 75%; }
         .part-id { font-size: 0.75rem; color: #0e639c; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 2px; }
         .part-name { font-size: 0.9rem; color: #e0e0e0; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
 
-        /* ระบบเช็คบ็อกซ์สไตล์โมเดิร์น */
         .checkbox-container {
             position: relative;
             cursor: pointer;
@@ -114,19 +116,30 @@
         }
         .checkbox-container input { display: none; }
         .custom-checkbox {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             border: 2px solid #555;
-            border-radius: 4px;
+            border-radius: 5px;
             display: inline-block;
             transition: all 0.2s ease;
+            position: relative;
         }
         .checkbox-container input:checked + .custom-checkbox {
             background-color: #0e639c;
             border-color: #0e639c;
+            box-shadow: 0 0 8px rgba(14, 99, 156, 0.6);
+        }
+        .checkbox-container input:checked + .custom-checkbox::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
         }
 
-        /* พื้นที่แสดงรายการพาร์ทลิสต์ที่เลือก (Cart) */
         #cart-container {
             height: 42vh;
             background-color: #141414;
@@ -145,7 +158,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background-color: #212121;
+            background: linear-gradient(135deg, #212121 0%, #252525 100%);
             padding: 10px 14px;
             margin-bottom: 8px;
             border-radius: 6px;
@@ -162,6 +175,11 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .qty-controls {
             display: flex;
             align-items: center;
@@ -169,7 +187,7 @@
         }
 
         .btn-qty {
-            background-color: #2d2d30;
+            background: linear-gradient(135deg, #2d2d30 0%, #333338 100%);
             color: #fff;
             border: 1px solid #444;
             padding: 4px 10px;
@@ -177,23 +195,22 @@
             border-radius: 4px;
             font-weight: bold;
             font-size: 0.85rem;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
-        .btn-qty:hover { background-color: #0e639c; border-color: #1177bb; }
+        .btn-qty:hover { background: #0e639c; border-color: #1177bb; box-shadow: 0 0 8px rgba(14, 99, 156, 0.4); }
 
         .btn-remove {
-            background-color: #4a1515;
+            background: linear-gradient(135deg, #4a1515 0%, #5a2020 100%);
             color: #ff8888;
             border: 1px solid #662222;
             padding: 4px 8px;
             cursor: pointer;
             border-radius: 4px;
             font-size: 0.8rem;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
-        .btn-remove:hover { background-color: #a61c1c; color: #fff; }
+        .btn-remove:hover { background: #a61c1c; color: #fff; box-shadow: 0 0 8px rgba(166, 28, 28, 0.4); }
 
-        /* กล่องป๊อปอัปตามพิกัดลูกศรเมาส์ (Tooltip) */
         #tooltip {
             position: fixed;
             display: none;
@@ -219,6 +236,57 @@
 
         .tooltip-title { font-weight: 700; color: #0e639c; font-size: 0.8rem; letter-spacing: 0.5px; }
         .tooltip-name { font-size: 0.95rem; margin-top: 4px; color: #ffffff; font-weight: 600; }
+
+        #loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.7);
+            z-index: 50;
+            transition: opacity 0.5s;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #333;
+            border-top: 4px solid #0e639c;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        #status-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 20px 30px;
+            pointer-events: none;
+            z-index: 40;
+        }
+
+        #status-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 20px 30px;
+            pointer-events: none;
+            z-index: 40;
+        }
+
+        #status-text {
+            color: #0e639c;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -228,8 +296,16 @@
 
     <div class="wrapper">
         
-        <!-- ฝั่งหน้าจอแสดงผล 3D สตูดิโอ -->
         <div id="canvas-container">
+            <div id="loading-overlay">
+                <div style="text-align:center;">
+                    <div class="spinner"></div>
+                    <div style="color:#0e639c;font-weight:600;letter-spacing:1px;">LOADING 3D MODEL...</div>
+                </div>
+            </div>
+            <div id="status-bar">
+                <div id="status-text">🖱️ Hover over parts to identify</div>
+            </div>
             <div id="tooltip">
                 <img id="tooltip-img" src="" alt="Part Image">
                 <div id="tooltip-id" class="tooltip-title">PART NO: </div>
@@ -237,7 +313,6 @@
             </div>
         </div>
 
-        <!-- แผงด้านขวาควบคุมรายการสินค้าและคลังข้อมูลอะไหล่ -->
         <div id="sidebar">
             <div class="sidebar-header">ALPHA COMPACT INDUSTRIAL</div>
             
@@ -253,55 +328,55 @@
     </div>
 
     <script>
-        // 1. ฐานข้อมูลอะไหล่เต็มรูปแบบ อ้างอิงตรงตามสเปกคู่มือ Alpha Compact ทั้งหมด 100%
         const masterSparePartsCatalog = {
             "BAUGRUPPE_A_CHASSIS": [
-                { id: "40003272", name: "Cover with controller LH", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Cover+LH" },[cite: 1]
-                { id: "40003271", name: "Cover with controller RH", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Cover+RH" },[cite: 1]
-                { id: "32912434", name: "Deckel Alpha Compact Base", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Deckel+Alpha" },[cite: 1]
-                { id: "32910047", name: "Plate connector assignment LH", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Plate+LH" },[cite: 1]
-                { id: "32910036", name: "Plate connector assignment RH", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Plate+RH" },[cite: 1]
-                { id: "40003268", name: "Power pack Base LH Unit", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Power+Pack+LH" },[cite: 1]
-                { id: "40003269", name: "Power pack Base RH Unit", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Power+Pack+RH" },[cite: 1]
-                { id: "33016858", name: "CPU/IO-Board System controller", img: "https://via.placeholder.com/200x120/ffffff/000000?text=CPU+IO+Board" },[cite: 1]
-                { id: "33016788", name: "Motor-Board Drive controller", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Motor+Board" },[cite: 1]
-                { id: "32909028", name: "Main switch / Geräteschalter", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Main+Switch" }[cite: 1]
+                { id: "40003272", name: "Cover with controller LH", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Cover+LH" },
+                { id: "40003271", name: "Cover with controller RH", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Cover+RH" },
+                { id: "32912434", name: "Deckel Alpha Compact Base", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Deckel+Alpha" },
+                { id: "32910047", name: "Plate connector assignment LH", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Plate+LH" },
+                { id: "32910036", name: "Plate connector assignment RH", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Plate+RH" },
+                { id: "40003268", name: "Power pack Base LH Unit", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Power+Pack+LH" },
+                { id: "40003269", name: "Power pack Base RH Unit", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Power+Pack+RH" },
+                { id: "33016858", name: "CPU/IO-Board System controller", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=CPU+IO+Board" },
+                { id: "33016788", name: "Motor-Board Drive controller", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Motor+Board" },
+                { id: "32909028", name: "Main switch / Geräteschalter", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Main+Switch" }
             ],
             "BAUGRUPPE_B_TRANSPORT": [
-                { id: "32901023", name: "Drive roller corund 120mm", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Corund+120mm" },[cite: 1]
-                { id: "32901027", name: "Drive roller rubber 120mm", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Rubber+120mm" },[cite: 1]
-                { id: "32901024", name: "Drive roller corund 150mm", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Corund+150mm" },[cite: 1]
-                { id: "32901028", name: "Drive roller rubber 150mm", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Rubber+150mm" },[cite: 1]
-                { id: "33001631", name: "Timing belt / Zahnriemen Drive", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Timing+Belt" },[cite: 1]
-                { id: "33001636", name: "Zahnriemenrad / Pulley 14-T5", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Pulley+14-T5" },[cite: 1]
-                { id: "33016851", name: "Main Step Motor Drive", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Main+Motor" },[cite: 1]
-                { id: "35001958", name: "Eingreifschutz / Hand protection", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Hand+Protection" }[cite: 1]
+                { id: "32901023", name: "Drive roller corund 120mm", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Corund+120mm" },
+                { id: "32901027", name: "Drive roller rubber 120mm", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Rubber+120mm" },
+                { id: "32901024", name: "Drive roller corund 150mm", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Corund+150mm" },
+                { id: "32901028", name: "Drive roller rubber 150mm", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Rubber+150mm" },
+                { id: "33001631", name: "Timing belt / Zahnriemen Drive", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Timing+Belt" },
+                { id: "33001636", name: "Zahnriemenrad / Pulley 14-T5", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Pulley+14-T5" },
+                { id: "33016851", name: "Main Step Motor Drive", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Main+Motor" },
+                { id: "35001958", name: "Eingreifschutz / Hand protection", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Hand+Protection" }
             ],
             "BAUGRUPPE_C_REWINDER": [
-                { id: "35001797", name: "Dancer complete system / Tänzer", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Dancer+Arm" },[cite: 1]
-                { id: "35001777", name: "Rewinder shaft 120mm Core", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Rewind+Shaft+120" },[cite: 1]
-                { id: "35001926", name: "Rewinder shaft 150mm Core", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Rewind+Shaft+150" },[cite: 1]
-                { id: "33005257", name: "Rundriemen / Round belt drive", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Round+Belt" },[cite: 1]
-                { id: "32907671", name: "Aufspullteller / Rewinder plate", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Rewinder+Plate" },[cite: 1]
-                { id: "32911430", name: "Aufspulkern / Rewind core unit", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Rewind+Core" }[cite: 1]
+                { id: "35001797", name: "Dancer complete system / Tänzer", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Dancer+Arm" },
+                { id: "35001777", name: "Rewinder shaft 120mm Core", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Rewind+Shaft+120" },
+                { id: "35001926", name: "Rewinder shaft 150mm Core", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Rewind+Shaft+150" },
+                { id: "33005257", name: "Rundriemen / Round belt drive", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Round+Belt" },
+                { id: "32907671", name: "Aufspullteller / Rewinder plate", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Rewinder+Plate" },
+                { id: "32911430", name: "Aufspulkern / Rewind core unit", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Rewind+Core" }
             ],
             "BAUGRUPPE_D_UNWINDER_AND_SENSORS": [
-                { id: "35002061", name: "Unwinder arm 120mm LH Component", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Unwind+Arm+120LH" },[cite: 1]
-                { id: "35001873", name: "Unwinder arm 120mm RH Component", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Unwind+Arm+120RH" },[cite: 1]
-                { id: "33001934", name: "Abspulkern 3\" / Unwind core roll", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Unwind+Core+3" },[cite: 1]
-                { id: "33010487", name: "Bremsband / Friction brake belt", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Brake+Belt" },[cite: 1]
-                { id: "33090245", name: "Label sensor OGUTI Fixed Element", img: "https://via.placeholder.com/200x120/ffffff/000000?text=OGUTI+Sensor" },[cite: 1]
-                { id: "33010671", name: "Label sensor USGT Ultrasonic Block", img: "https://via.placeholder.com/200x120/ffffff/000000?text=USGT+Sensor" },[cite: 1]
-                { id: "33001556", name: "Klemmstück / Clamp fixing block", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Clamp+Block" }[cite: 1]
+                { id: "35002061", name: "Unwinder arm 120mm LH Component", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Unwind+Arm+120LH" },
+                { id: "35001873", name: "Unwinder arm 120mm RH Component", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Unwind+Arm+120RH" },
+                { id: "33001934", name: "Abspulkern 3\" / Unwind core roll", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Unwind+Core+3" },
+                { id: "33010487", name: "Bremsband / Friction brake belt", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Brake+Belt" },
+                { id: "33090245", name: "Label sensor OGUTI Fixed Element", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=OGUTI+Sensor" },
+                { id: "33010671", name: "Label sensor USGT Ultrasonic Block", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=USGT+Sensor" },
+                { id: "33001556", name: "Klemmstück / Clamp fixing block", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Clamp+Block" }
             ]
         };
 
-        // ยุบรวมกลุ่มข้อมูลให้เป็น Flat Database ระดับระบุพิกัดชิ้นเดี่ยว
         let partDatabase = {};
         let selectedPartsCart = {};
-        let independentMeshRegistry = []; // อาเรย์เก็บเก็บเฉพาะวัตถุ Mesh เดี่ยวที่ผ่านการผ่าตัดโครงสร้างแล้ว
+        let independentMeshRegistry = [];
+        let meshToPartMap = new Map();
+        let originalMaterials = new Map();
+        let hoveredPartId = null;
 
-        // ฟังก์ชันเกลี่ยกระจายรายการชิ้นส่วนอะไหล่ทั้งหมดเข้าสู่คลังระบบ
         let globalCounter = 1;
         for (const [groupName, items] of Object.entries(masterSparePartsCatalog)) {
             items.forEach((item) => {
@@ -309,17 +384,18 @@
                 partDatabase[generatedKey] = {
                     id: item.id,
                     name: item.name,
-                    img: item.img
+                    img: item.img,
+                    group: groupName
                 };
                 globalCounter++;
             });
         }
 
-        // จัดพิมพ์โครงสร้างแคตตาล็อกฝั่ง Sidebar UI ด้านขวา
         const partsListUI = document.getElementById('parts-list');
         for (const [uniqueId, info] of Object.entries(partDatabase)) {
             const item = document.createElement('div');
             item.className = 'part-item';
+            item.id = `part-item-${uniqueId}`;
             item.innerHTML = `
                 <div class="part-info">
                     <span class="part-id">P/N: ${info.id}</span>
@@ -330,14 +406,26 @@
                     <span class="custom-checkbox"></span>
                 </label>
             `;
+            item.addEventListener('mouseenter', () => highlightMeshById(uniqueId, true));
+            item.addEventListener('mouseleave', () => highlightMeshById(uniqueId, false));
+            item.addEventListener('click', (e) => {
+                if (!e.target.closest('.checkbox-container')) {
+                    const cb = document.getElementById(`check-${uniqueId}`);
+                    cb.checked = !cb.checked;
+                    togglePart(uniqueId, cb.checked);
+                }
+            });
             partsListUI.appendChild(item);
         }
 
         function togglePart(uniqueId, isChecked) {
+            const itemEl = document.getElementById(`part-item-${uniqueId}`);
             if (isChecked) {
                 if (!selectedPartsCart[uniqueId]) selectedPartsCart[uniqueId] = 1;
+                itemEl.classList.add('active-part');
             } else {
                 delete selectedPartsCart[uniqueId];
+                itemEl.classList.remove('active-part');
             }
             updateCartUI();
         }
@@ -349,6 +437,7 @@
                     delete selectedPartsCart[uniqueId];
                     const cb = document.getElementById(`check-${uniqueId}`);
                     if(cb) cb.checked = false;
+                    document.getElementById(`part-item-${uniqueId}`).classList.remove('active-part');
                 }
                 updateCartUI();
             }
@@ -358,6 +447,7 @@
             delete selectedPartsCart[uniqueId];
             const cb = document.getElementById(`check-${uniqueId}`);
             if(cb) cb.checked = false;
+            document.getElementById(`part-item-${uniqueId}`).classList.remove('active-part');
             updateCartUI();
         }
 
@@ -365,18 +455,23 @@
             const cartListUI = document.getElementById('cart-list');
             cartListUI.innerHTML = '';
             
+            if (Object.keys(selectedPartsCart).length === 0) {
+                cartListUI.innerHTML = '<div style="text-align:center;color:#666;padding:20px;font-style:italic;">No parts selected</div>';
+                return;
+            }
+            
             for (const [uniqueId, qty] of Object.entries(selectedPartsCart)) {
                 const info = partDatabase[uniqueId];
                 const item = document.createElement('div');
                 item.className = 'cart-item';
                 item.innerHTML = `
-                    <div style="display:flex; flex-direction:column; max-width:60%;">
+                    <div style="display:flex; flex-direction:column; max-width:55%;">
                         <span style="font-weight:700; font-size:0.75rem; color:#0e639c;">${info.id}</span>
                         <span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-weight:600; color:#fff;">${info.name}</span>
                     </div>
                     <div class="qty-controls">
-                        <button class="btn-qty" onclick="adjustQty('${uniqueId}', -1)">-</button>
-                        <span style="font-weight:700; min-width:15px; text-align:center;">${qty}</span>
+                        <button class="btn-qty" onclick="adjustQty('${uniqueId}', -1)">−</button>
+                        <span style="font-weight:700; min-width:20px; text-align:center; color:#fff;">${qty}</span>
                         <button class="btn-qty" onclick="adjustQty('${uniqueId}', 1)">+</button>
                         <button class="btn-remove" onclick="removePart('${uniqueId}')">✕</button>
                     </div>
@@ -385,11 +480,10 @@
             }
         }
 
-        // ================= เอนจิ้นหลักสามมิติ Three.js Studio =================
+        updateCartUI();
+
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        
-        // อัปเกรดหมอกและมิติความลึกของแสงเงาพื้นหลังให้สมจริง
         scene.background = new THREE.Color(0x1a1a1a);
         scene.fog = new THREE.FogExp2(0x1a1a1a, 0.015);
 
@@ -411,7 +505,6 @@
         controls.maxDistance = 100;
         controls.minDistance = 5;
 
-        // อัปเกรดระบบจัดวางแสงสตูดิโอระดับเวิร์ลคลาส (Professional Lighting Grid)
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
 
@@ -431,7 +524,14 @@
         rimLight.position.set(0, 20, 0);
         scene.add(rimLight);
 
-        // โหลดโมเดลวิศวกรรมจากเซิร์ฟเวอร์
+        const accentLight = new THREE.PointLight(0x0e639c, 0.3, 30);
+        accentLight.position.set(15, 5, 15);
+        scene.add(accentLight);
+
+        const gridHelper = new THREE.GridHelper(100, 50, 0x333333, 0x222222);
+        gridHelper.position.y = -5;
+        scene.add(gridHelper);
+
         const filename = "32100033_A_Comp_120_RH.step.glb";
         const loader = new THREE.GLTFLoader();
         let loadedModel;
@@ -441,42 +541,78 @@
             
             const box = new THREE.Box3().setFromObject(loadedModel);
             const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            
             loadedModel.position.x += (loadedModel.position.x - center.x);
             loadedModel.position.y += (loadedModel.position.y - center.y);
             loadedModel.position.z += (loadedModel.position.z - center.z);
             
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 25 / maxDim;
+            loadedModel.scale.set(scale, scale, scale);
+            
             let databaseKeys = Object.keys(partDatabase);
             let keyIndex = 0;
             
-            // อัลกอริทึมสแกนรื้อระบบผืนผ้าวัสดุ (Dynamic Material Disconnection Pipeline)
-            // เพื่อทำการ "ตัดไดคัต" สลายโครงสร้างวัสดุเดิมแยกจากกันแบบชิ้นใครชิ้นมันเด็ดขาด 100%
+            const colorPalette = [
+                0x4a90d9, 0x5cb85c, 0xf0ad4e, 0xd9534f, 0x9b59b6,
+                0x1abc9c, 0x3498db, 0xe74c3c, 0x2ecc71, 0xf39c12,
+                0x8e44ad, 0x16a085, 0x2980b9, 0xc0392b, 0x27ae60,
+                0xe67e22, 0x6c5ce7, 0x00b894, 0xfdcb6e, 0xd63031,
+                0x74b9ff, 0x55efc4, 0xff7675, 0xa29bfe, 0xfd79a8,
+                0xfab1a0, 0x00cec9, 0x0984e3, 0x6c5ce7, 0xe17055,
+                0xfdcb6e, 0x55a3ff
+            ];
+            
             loadedModel.traverse((node) => {
                 if (node.isMesh) {
-                    // ทำการโคลนและตัดการเชื่อมโยงของ Material อย่างสมบูรณ์ ป้องกันปัญหาสีลามข้ามวัตถุ
                     if (node.material) {
-                        node.material = node.material.clone();
-                        // อัปเกรดคุณสมบัติทางแสงสไตล์ Metallic อุตสาหกรรมชิ้นส่วนเครื่องจักร
-                        node.material.roughness = 0.4;
-                        node.material.metalness = 0.6;
+                        const originalMat = node.material.clone();
+                        originalMaterials.set(node.uuid, originalMat);
+                        
+                        const colorIndex = keyIndex % colorPalette.length;
+                        const baseColor = new THREE.Color(colorPalette[colorIndex]);
+                        
+                        node.material = new THREE.MeshStandardMaterial({
+                            color: baseColor,
+                            roughness: 0.3,
+                            metalness: 0.7,
+                            envMapIntensity: 1.0
+                        });
+                        
+                        node.castShadow = true;
+                        node.receiveShadow = true;
                     }
                     
-                    node.castShadow = true;
-                    node.receiveShadow = true;
-                    
-                    // ออกรหัสความจำผูกชิ้นต่อชิ้นเข้ากับฐานข้อมูลคลังอะไหล่ฝั่งขวา
                     let finalAssignedKey = databaseKeys[keyIndex % databaseKeys.length];
                     node.name = finalAssignedKey;
+                    meshToPartMap.set(node.uuid, finalAssignedKey);
                     
-                    // ลงทะเบียนเข้าสู่อาร์เรย์ตรวจสอบพิกัดยิงแสงของเมาส์โดยตรง
                     independentMeshRegistry.push(node);
                     keyIndex++;
                 }
             });
 
             scene.add(loadedModel);
+            
+            document.getElementById('loading-overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }, 500);
+            
+            document.getElementById('status-text').innerText = '🎯 Click parts to select | Drag to rotate | Scroll to zoom';
+            
+        }, undefined, function(error) {
+            console.error('Error loading model:', error);
+            document.getElementById('loading-overlay').innerHTML = `
+                <div style="text-align:center;color:#ff4444;">
+                    <div style="font-size:2rem;margin-bottom:10px;">⚠️</div>
+                    <div style="font-weight:600;">Model not found</div>
+                    <div style="font-size:0.85rem;color:#888;margin-top:5px;">Please ensure "${filename}" is available</div>
+                </div>
+            `;
         });
 
-        // ================= ระบบ Raycasting เจาะลึกตรวจสอบพิกัดผิวตาข่ายตรง ๆ (No Floating Points) =================
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const tooltip = document.getElementById('tooltip');
@@ -488,51 +624,133 @@
         window.addEventListener('mousemove', onMouseMove, false);
         window.addEventListener('click', onModelClick, false);
 
-        // ระบบดักพิกัดลูกศรเมาส์ชี้วัตถุกายภาพโดยตรง
-        function onMouseMove(event) {
-            const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-            tooltip.style.left = (event.clientX + 15) + 'px';
-            tooltip.style.top = (event.clientY + 15) + 'px';
-
-            if (independentMeshRegistry.length > 0) {
-                raycaster.setFromCamera(mouse, camera);
-                // สั่งการให้ Raycaster ตรวจสอบความละเอียดระดับผิวเนื้อวัตถุโดยตรง (false = เช็คระดับลึกสุด ไม่เช็ค Group ชั้นนอก)
-                const intersects = raycaster.intersectObjects(independentMeshRegistry, false);
-
-                if (intersects.length > 0) {
-                    const hitMesh = intersects[0].object;
-                    
-                    if (partDatabase[hitMesh.name]) {
-                        if (currentActiveMesh !== hitMesh) {
-                            // สั่งปิดเอฟเฟกต์สีเรืองแสงของพาร์ทชิ้นก่อนหน้า
-                            if (currentActiveMesh) currentActiveMesh.material.emissive.setHex(0x000000);
-                            
-                            currentActiveMesh = hitMesh;
-                            // ไฮไลท์เรืองแสงสีฟ้าอุตสาหกรรม (0x0e639c) เฉพาะชิ้นเดี่ยวชิ้นที่คุณกำลังชี้อยู่ตรง ๆ เท่านั้น!
-                            currentActiveMesh.material.emissive.setHex(0x0e639c);
-
-                            const pInfo = partDatabase[hitMesh.name];
-                            tooltipImg.src = pInfo.img;
-                            tooltipId.innerText = "PART NO: " + pInfo.id;
-                            tooltipName.innerText = pInfo.name;
-                            tooltip.style.display = 'block';
+        // ระบบจับแสงไฮไลท์อิงตาม ID
+        function highlightMeshById(partId, highlight) {
+            for (const mesh of independentMeshRegistry) {
+                if (mesh.name === partId) {
+                    if (highlight) {
+                        mesh.material.emissive.setHex(0x0e639c);
+                        mesh.material.emissiveIntensity = 0.5;
+                    } else {
+                        if (selectedPartsCart[partId]) {
+                            mesh.material.emissive.setHex(0x0e639c);
+                            mesh.material.emissiveIntensity = 0.3;
+                        } else {
+                            mesh.material.emissive.setHex(0x000000);
+                            mesh.material.emissiveIntensity = 0;
                         }
                     }
-                } else {
-                    if (currentActiveMesh) currentActiveMesh.material.emissive.setHex(0x000000);
-                    currentActiveMesh = null;
-                    tooltip.style.display = 'none';
                 }
             }
         }
 
-        // ระบบคลิกที่เนื้อวัตถุชิ้นงานเพื่อติ๊กเครื่องหมายถูกฝั่งขวา
+        function onMouseMove(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            
+            if (event.clientX < rect.left || event.clientX > rect.right || 
+                event.clientY < rect.top || event.clientY > rect.bottom) {
+                if (currentActiveMesh) {
+                    const partId = meshToPartMap.get(currentActiveMesh.uuid);
+                    if (!selectedPartsCart[partId]) {
+                        currentActiveMesh.material.emissive.setHex(0x000000);
+                        currentActiveMesh.material.emissiveIntensity = 0;
+                    } else {
+                        currentActiveMesh.material.emissive.setHex(0x0e639c);
+                        currentActiveMesh.material.emissiveIntensity = 0.3;
+                    }
+                    currentActiveMesh = null;
+                }
+                tooltip.style.display = 'none';
+                document.getElementById('status-text').innerText = '🎯 Click parts to select | Drag to rotate | Scroll to zoom';
+                return;
+            }
+            
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            let tooltipX = event.clientX + 20;
+            let tooltipY = event.clientY + 20;
+            if (tooltipX + 240 > window.innerWidth) tooltipX = event.clientX - 260;
+            if (tooltipY + 150 > window.innerHeight) tooltipY = event.clientY - 160;
+            
+            tooltip.style.left = tooltipX + 'px';
+            tooltip.style.top = tooltipY + 'px';
+
+            if (independentMeshRegistry.length > 0) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(independentMeshRegistry, false);
+
+                if (intersects.length > 0) {
+                    const hitMesh = intersects[0].object;
+                    const partId = meshToPartMap.get(hitMesh.uuid);
+                    
+                    if (partId && partDatabase[partId]) {
+                        if (currentActiveMesh !== hitMesh) {
+                            if (currentActiveMesh) {
+                                const prevId = meshToPartMap.get(currentActiveMesh.uuid);
+                                if (!selectedPartsCart[prevId]) {
+                                    currentActiveMesh.material.emissive.setHex(0x000000);
+                                    currentActiveMesh.material.emissiveIntensity = 0;
+                                } else {
+                                    currentActiveMesh.material.emissive.setHex(0x0e639c);
+                                    currentActiveMesh.material.emissiveIntensity = 0.3;
+                                }
+                            }
+                            
+                            currentActiveMesh = hitMesh;
+                            hitMesh.material.emissive.setHex(0x0e639c);
+                            hitMesh.material.emissiveIntensity = 0.6;
+
+                            const pInfo = partDatabase[partId];
+                            tooltipImg.src = pInfo.img;
+                            tooltipId.innerText = "PART NO: " + pInfo.id;
+                            tooltipName.innerText = pInfo.name;
+                            tooltip.style.display = 'block';
+                            
+                            document.getElementById('status-text').innerText = `🔍 ${pInfo.id} - ${pInfo.name}`;
+                            
+                            if (hoveredPartId !== partId) {
+                                if (hoveredPartId) {
+                                    const prevItem = document.getElementById(`part-item-${hoveredPartId}`);
+                                    if (prevItem && !selectedPartsCart[hoveredPartId]) prevItem.style.borderColor = '#333333';
+                                }
+                                hoveredPartId = partId;
+                                const currItem = document.getElementById(`part-item-${partId}`);
+                                if (currItem) {
+                                    currItem.style.borderColor = '#0e639c';
+                                    currItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if (currentActiveMesh) {
+                        const prevId = meshToPartMap.get(currentActiveMesh.uuid);
+                        if (!selectedPartsCart[prevId]) {
+                            currentActiveMesh.material.emissive.setHex(0x000000);
+                            currentActiveMesh.material.emissiveIntensity = 0;
+                        } else {
+                            currentActiveMesh.material.emissive.setHex(0x0e639c);
+                            currentActiveMesh.material.emissiveIntensity = 0.3;
+                        }
+                        currentActiveMesh = null;
+                    }
+                    tooltip.style.display = 'none';
+                    document.getElementById('status-text').innerText = '🎯 Click parts to select | Drag to rotate | Scroll to zoom';
+                    
+                    if (hoveredPartId) {
+                        const prevItem = document.getElementById(`part-item-${hoveredPartId}`);
+                        if (prevItem && !selectedPartsCart[hoveredPartId]) prevItem.style.borderColor = '#333333';
+                        hoveredPartId = null;
+                    }
+                }
+            }
+        }
+
         function onModelClick(event) {
             const rect = renderer.domElement.getBoundingClientRect();
-            if (event.clientX > rect.right || event.clientX < rect.left || event.clientY > rect.bottom || event.clientY < rect.top) {
+            if (event.clientX > rect.right || event.clientX < rect.left || 
+                event.clientY > rect.bottom || event.clientY < rect.top) {
                 return;
             }
 
@@ -542,21 +760,31 @@
 
                 if (intersects.length > 0) {
                     const hitMesh = intersects[0].object;
-                    const uniqueId = hitMesh.name;
+                    const uniqueId = meshToPartMap.get(hitMesh.uuid);
                     
-                    if (partDatabase[uniqueId]) {
+                    if (uniqueId && partDatabase[uniqueId]) {
                         const cb = document.getElementById(`check-${uniqueId}`);
                         if (cb) {
-                            // สลับค่าเครื่องหมายติ๊กถูกในกล่องสี่เหลี่ยมด้านขวา และสั่งให้พาร์ทนั้นเด้งลงตะกร้าสรุปรายการด้านล่าง
                             cb.checked = !cb.checked;
                             togglePart(uniqueId, cb.checked);
+                            
+                            hitMesh.material.emissive.setHex(0xffffff);
+                            hitMesh.material.emissiveIntensity = 1.0;
+                            setTimeout(() => {
+                                if (cb.checked) {
+                                    hitMesh.material.emissive.setHex(0x0e639c);
+                                    hitMesh.material.emissiveIntensity = 0.3;
+                                } else {
+                                    hitMesh.material.emissive.setHex(0x000000);
+                                    hitMesh.material.emissiveIntensity = 0;
+                                }
+                            }, 200);
                         }
                     }
                 }
             }
         }
 
-        // Render & Control Loop Pipeline
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
@@ -564,7 +792,6 @@
         }
         animate();
 
-        // ระบบรองรับการยืดหยุ่นขนาดหน้าจออัจฉริยะ (Responsive Layout)
         window.addEventListener('resize', onWindowResize, false);
         function onWindowResize() {
             camera.aspect = container.clientWidth / container.clientHeight;
