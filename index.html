@@ -78,7 +78,7 @@
         #cart-section {
             background: #eef2f7; 
             border-radius: 12px;
-            margin-bottom: 15px; 
+            margin-bottom: 12px; 
             border: 1px solid #b0c4de;
             overflow: hidden;
             flex-shrink: 0;
@@ -120,16 +120,23 @@
         }
         
         #cart-items-list {
-            max-height: 160px;
-            overflow-y: auto;
+            max-height: 140px; /* จำกัดความสูงเพื่อไม่ให้เบียดบังกล่องชิ้นส่วนด้านล่าง */
+            overflow-y: auto;   /* เปิดให้สกรอลล์ในตะกร้าได้เองอิสระ */
             padding-top: 12px;
+            -webkit-overflow-scrolling: touch;
         }
         
         .cart-item-row { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; color: #555; border-bottom: 1px solid #ddd; align-items: center; }
         .remove-btn { color: var(--danger); cursor: pointer; font-weight: bold; margin-left: 8px; font-size: 14px; }
 
         /* รายการอะไหล่ทั้งหมด */
-        .parts-container { overflow-y: auto; flex-grow: 1; padding-right: 5px; margin-bottom: 15px; }
+        .parts-container { 
+            overflow-y: auto; 
+            flex-grow: 1; 
+            padding-right: 5px; 
+            margin-bottom: 10px;
+            -webkit-overflow-scrolling: touch; /* ป้องกันการหนืดบน iOS */
+        }
         .section-title { font-weight: bold; color: var(--primary); margin: 16px 0 6px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid var(--primary); padding-left: 6px; }
         
         .part-item { 
@@ -144,13 +151,14 @@
         .add-cart-btn { background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: background 0.2s; white-space: nowrap; }
         .add-cart-btn:hover { background: #004085; }
 
-        /* Sidebar Footer */
+        /* Sidebar Footer ล็อคให้อยู่ล่างสุดเสมอ ไม่ว่าจะอยู่บนเบราว์เซอร์ไหน */
         .sidebar-footer {
             margin-top: auto;
             padding-top: 10px;
             border-top: 1px solid var(--border-glass);
             flex-shrink: 0;
             background: var(--bg-glass);
+            width: 100%;
         }
 
         .pdf-download-btn {
@@ -169,10 +177,11 @@
             justify-content: center;
             gap: 6px;
             box-shadow: 0 2px 6px rgba(40, 167, 69, 0.2);
+            box-sizing: border-box;
         }
         .pdf-download-btn:hover { background: #1e7e34; }
 
-        /* Responsive Settings Mobile (50/50 Layout) */
+        /* 📱 ปรับแต่งสำหรับหน้าจอมือถือโดยเฉพาะ - แบ่งสัดส่วน 50/50 แก้ไขจุดสกรอลล์ค้าง */
         @media (max-width: 768px) {
             #page-wrapper {
                 grid-template-columns: 1fr;
@@ -189,10 +198,13 @@
             .sidebar-header h3 { font-size: 16px; }
             .manual-link-btn { padding: 4px 10px; font-size: 10px; }
             
-            #cart-section { margin-bottom: 8px; }
+            #cart-section { margin-bottom: 6px; }
             .cart-header-clickable { padding: 8px 10px; font-size: 11px; }
             .cart-remark-badge { font-size: 10px; padding: 1px 4px; }
             
+            /* ล็อคขนาดความสูงสูงสุดของตะกร้าบนมือถือเพื่อไม่ให้ไปดึงโฟกัสจากหน้าต่างด้านล่าง */
+            #cart-items-list { max-height: 90px; } 
+
             .section-title { margin: 10px 0 4px 0; font-size: 11px; }
             .part-item { padding: 6px 10px; margin-bottom: 4px; font-size: 11px; }
             .part-name { font-size: 12px; }
@@ -200,10 +212,10 @@
             .add-cart-btn { padding: 6px 10px; font-size: 11px; }
             
             .sidebar-footer { padding-top: 6px; }
-            .pdf-download-btn { padding: 8px; font-size: 12px; }
+            .pdf-download-btn { padding: 10px; font-size: 12px; }
         }
 
-        #print-pdf-layout { display: none; }
+        #print-pdf-layout { display: none; font-family: sans-serif; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -212,12 +224,12 @@
 </head>
 <body>
 
-    <!-- กล่องวัตถุจัดเตรียมโครงสร้างเอกสารพิมพ์ขนาด A4 -->
+    <!-- ตารางสำหรับจัดเตรียมพิมพ์เอกสาร PDF A4 -->
     <div id="print-pdf-layout">
         <div style="font-family: sans-serif; padding: 30px; color: #333; background: #fff;">
             <div style="border-bottom: 3px solid #0056b3; padding-bottom: 12px; margin-bottom: 20px;">
                 <h2 style="margin: 0; color: #0056b3; font-size: 22px;">ใบรายการเบิกชิ้นส่วนอะไหล่ / Spare Parts Request</h2>
-                <p style="margin: 6px 0 0 0; font-size: 12px; color: #555;">เครื่องติดฉลากอัตโนมัติรุ่น: Alpha Compact RH 120 (Weber Group)[cite: 1]</p>
+                <p style="margin: 6px 0 0 0; font-size: 12px; color: #555;">เครื่องติดฉลากอัตโนมัติรุ่น: Alpha Compact RH 120 (Weber Group)</p>
             </div>
             <p style="font-size: 13px;"><strong>วันที่ออกเอกสารระบบ:</strong> <span id="print-date"></span></p>
             <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
@@ -271,8 +283,10 @@
                 </div>
             </div>
 
+            <!-- กล่องชิ้นส่วนหลัก - แก้ไขระบบค้าง สกรอลล์ไหลลื่นอิสระตลอดเวลา -->
             <div class="parts-container" id="dynamic-parts-list"></div>
             
+            <!-- ปุ่มออกเอกสารสีเขียวอยู่ล่างสุดคงที่ ถาวร ไม่หายไปไหน -->
             <div class="sidebar-footer">
                 <button class="pdf-download-btn" onclick="generatePartsPDF()">📄 บันทึกใบรายการอะไหล่เข้าเครื่อง (PDF A4)</button>
             </div>
@@ -280,7 +294,7 @@
     </div>
 
     <script>
-        // ฐานข้อมูลชิ้นส่วนทั้งหมดจากเอกสาร PDF ครบถ้วนทุกหัวข้อ 73 รายการ[cite: 1]
+        // ฐานข้อมูลชิ้นส่วนทั้งหมดจากเอกสาร PDF ครบถ้วนทุกหัวข้อ 73 รายการ
         const completePdfDatabase = {
             "Baugr. A: Gehäuse / Chassis (หน้า 8-9)": [
                 { pn: "40003272", name: "Cover with controller LH (base)" },
@@ -460,7 +474,6 @@
             renderCart();
         };
 
-        // ฟังก์ชันอัปเดตแก้ปัญหา In-App Browser LINE บล็อกการโหลดไฟล์[cite: 1]
         window.generatePartsPDF = function() {
             const keys = Object.keys(shoppingCart);
             if(keys.length === 0) {
@@ -469,11 +482,8 @@
             }
             
             const formattedDate = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' }) + " น.";
-            
-            // เช็คว่าหน้าเว็บกำลังรันอยู่ในแอป LINE หรือไม่
             const isLineBrowser = /Line/i.test(navigator.userAgent);
 
-            // เตรียมโครงสร้างตาราง HTML สำหรับพิมพ์ออกกระดาษ A4
             const tableRowsHTML = keys.map((pn, index) => `
                 <tr>
                     <td style="border: 1px solid #000; padding: 10px; text-align: center; font-size:13px;">${index + 1}</td>
@@ -488,7 +498,7 @@
                 <head>
                     <title>Spare Parts Request</title>
                     <style>
-                        body { font-family: sans-serif; padding: 30px; color: #333; background: #fff; line-height: 1.5; }
+                        body { font-family: sans-serif; padding: 40px; color: #333; background: #fff; line-height: 1.5; }
                         .header { border-bottom: 3px solid #0056b3; padding-bottom: 10px; margin-bottom: 20px; }
                         .table { width: 100%; border-collapse: collapse; margin-top: 15px; }
                         .table th, .table td { border: 1px solid #000; padding: 10px; text-align: left; }
@@ -521,13 +531,11 @@
                 </html>`;
 
             if (isLineBrowser) {
-                // ทางแก้สำหรับ LINE: เปิดหน้าต่างใหม่ขึ้นมารวมรายการเป็นกระดาษ A4 เพื่อให้กดเซฟในมือถือได้ตรงๆ ไม่พึ่งพาระบบโหลดเบื้องหลัง
                 const printWindow = window.open('', '_blank');
                 printWindow.document.write(htmlContent);
                 printWindow.document.write(`<script>window.onload = function() { window.print(); }<\/script>`);
                 printWindow.document.close();
             } else {
-                // หากเปิดบน Chrome/Safari บนคอมพิวเตอร์และมือถือปกติ: รัน html2pdf เซฟลงเครื่องอัตโนมัติทันที
                 document.getElementById('print-date').innerText = formattedDate;
                 document.getElementById('print-table-body').innerHTML = tableRowsHTML;
                 const element = document.getElementById('print-pdf-layout');
@@ -547,7 +555,7 @@
             }
         };
 
-        // Render รายการอะไหล่หลักลงระบบเมนู
+        // Render รายการอะไหล่ทั้งหมด
         const listContainer = document.getElementById('dynamic-parts-list');
         Object.entries(completePdfDatabase).forEach(([section, items]) => {
             const secTitle = document.createElement('div');
@@ -569,7 +577,7 @@
             });
         });
 
-        // Initialize 3D WebGL Canvas
+        // Initialize 3D Engine
         const container3d = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xeeeeee);
