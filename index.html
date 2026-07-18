@@ -1,4 +1,8 @@
-<!DOCTYPE html>
+
+# สร้างไฟล์ HTML ใหม่ที่ปรับปรุงตามความต้องการของผู้ใช้
+# สีธรรมดา แต่ดูมืออาชีพ (ไม่ใช่สีสันจัดจ้านแบบเดิม)
+
+html_content = '''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -536,6 +540,62 @@
         const loader = new THREE.GLTFLoader();
         let loadedModel;
         
+        // ===== สีธรรมดาแบบมืออาชีพ (Industrial Professional Palette) =====
+        // ใช้สีที่ดูสมจริงสำหรับชิ้นส่วนอุตสาหกรรม
+        const professionalMaterialPalette = [
+            // สีขาว/เทาอ่อน - พลาสติก/ฝาครอบ
+            { color: 0xf5f5f5, roughness: 0.4, metalness: 0.05 },
+            { color: 0xe8e8e8, roughness: 0.35, metalness: 0.1 },
+            { color: 0xdddddd, roughness: 0.3, metalness: 0.15 },
+            { color: 0xd0d0d0, roughness: 0.4, metalness: 0.1 },
+            // สีเทากลาง - โลหะ/อลูมิเนียม
+            { color: 0xc0c0c0, roughness: 0.25, metalness: 0.75 },
+            { color: 0xb0b0b0, roughness: 0.2, metalness: 0.8 },
+            { color: 0xa0a0a0, roughness: 0.3, metalness: 0.7 },
+            { color: 0x909090, roughness: 0.25, metalness: 0.75 },
+            // สีเทาเข้ม - เหล็ก/สแตนเลส
+            { color: 0x808080, roughness: 0.35, metalness: 0.85 },
+            { color: 0x707070, roughness: 0.3, metalness: 0.9 },
+            { color: 0x606060, roughness: 0.25, metalness: 0.85 },
+            { color: 0x505050, roughness: 0.35, metalness: 0.8 },
+            // สีดำ - ยาง/พลาสติกดำ
+            { color: 0x333333, roughness: 0.6, metalness: 0.1 },
+            { color: 0x2a2a2a, roughness: 0.55, metalness: 0.15 },
+            { color: 0x222222, roughness: 0.5, metalness: 0.2 },
+            { color: 0x1a1a1a, roughness: 0.65, metalness: 0.05 },
+            // สีฟ้าอ่อน - ชิ้นส่วนอิเล็กทรอนิกส์/PCB
+            { color: 0x3d7ea6, roughness: 0.4, metalness: 0.2 },
+            { color: 0x4a8ab0, roughness: 0.35, metalness: 0.25 },
+            // สีแดง - สวิตช์/ปุ่มกด
+            { color: 0xb03030, roughness: 0.35, metalness: 0.3 },
+            { color: 0xcc4040, roughness: 0.3, metalness: 0.25 },
+            // สีเขียว - LED/สถานะ
+            { color: 0x3a8a3a, roughness: 0.35, metalness: 0.2 },
+            { color: 0x4a9a4a, roughness: 0.3, metalness: 0.25 },
+            // สีเหลือง - คำเตือน/สัญลักษณ์
+            { color: 0xc4a030, roughness: 0.4, metalness: 0.15 },
+            { color: 0xd4b040, roughness: 0.35, metalness: 0.2 },
+            // สีส้ม - สายไฟ/คอนเน็กเตอร์
+            { color: 0xc07030, roughness: 0.4, metalness: 0.2 },
+            { color: 0xd08040, roughness: 0.35, metalness: 0.25 },
+            // สีม่วงอ่อน - ไอโซเลเตอร์/ฉนวน
+            { color: 0x8a6a9a, roughness: 0.45, metalness: 0.1 },
+            { color: 0x9a7aaa, roughness: 0.4, metalness: 0.15 },
+            // สีน้ำตาล - ยาง/ซีล
+            { color: 0x8b6b4b, roughness: 0.7, metalness: 0.05 },
+            { color: 0x9a7b5b, roughness: 0.65, metalness: 0.1 },
+            // สีครีม - ไนลอน/พลาสติกวิศวกรรม
+            { color: 0xe0d8c8, roughness: 0.4, metalness: 0.05 },
+            { color: 0xd0c8b8, roughness: 0.35, metalness: 0.1 },
+            // สีเงิน - อลูมิเนียมขัดเงา
+            { color: 0xd8d8d8, roughness: 0.15, metalness: 0.95 },
+            { color: 0xe0e0e0, roughness: 0.1, metalness: 0.95 },
+            { color: 0xc8c8c8, roughness: 0.2, metalness: 0.9 },
+            { color: 0xb8b8b8, roughness: 0.15, metalness: 0.92 },
+            { color: 0xa8a8a8, roughness: 0.2, metalness: 0.88 },
+            { color: 0x989898, roughness: 0.25, metalness: 0.85 }
+        ];
+        
         loader.load(filename, function (gltf) {
             loadedModel = gltf.scene;
             
@@ -554,29 +614,19 @@
             let databaseKeys = Object.keys(partDatabase);
             let keyIndex = 0;
             
-            const colorPalette = [
-                0x4a90d9, 0x5cb85c, 0xf0ad4e, 0xd9534f, 0x9b59b6,
-                0x1abc9c, 0x3498db, 0xe74c3c, 0x2ecc71, 0xf39c12,
-                0x8e44ad, 0x16a085, 0x2980b9, 0xc0392b, 0x27ae60,
-                0xe67e22, 0x6c5ce7, 0x00b894, 0xfdcb6e, 0xd63031,
-                0x74b9ff, 0x55efc4, 0xff7675, 0xa29bfe, 0xfd79a8,
-                0xfab1a0, 0x00cec9, 0x0984e3, 0x6c5ce7, 0xe17055,
-                0xfdcb6e, 0x55a3ff
-            ];
-            
             loadedModel.traverse((node) => {
                 if (node.isMesh) {
                     if (node.material) {
                         const originalMat = node.material.clone();
                         originalMaterials.set(node.uuid, originalMat);
                         
-                        const colorIndex = keyIndex % colorPalette.length;
-                        const baseColor = new THREE.Color(colorPalette[colorIndex]);
+                        // เลือกสีจาก palette แบบวนซ้ำ
+                        const matConfig = professionalMaterialPalette[keyIndex % professionalMaterialPalette.length];
                         
                         node.material = new THREE.MeshStandardMaterial({
-                            color: baseColor,
-                            roughness: 0.3,
-                            metalness: 0.7,
+                            color: matConfig.color,
+                            roughness: matConfig.roughness,
+                            metalness: matConfig.metalness,
                             envMapIntensity: 1.0
                         });
                         
@@ -624,7 +674,6 @@
         window.addEventListener('mousemove', onMouseMove, false);
         window.addEventListener('click', onModelClick, false);
 
-        // ระบบจับแสงไฮไลท์อิงตาม ID
         function highlightMeshById(partId, highlight) {
             for (const mesh of independentMeshRegistry) {
                 if (mesh.name === partId) {
@@ -800,4 +849,11 @@
         }
     </script>
 </body>
-</html>
+</html>'''
+
+# บันทึกไฟล์
+with open('/mnt/agents/output/3d_catalog_professional_colors.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("✅ บันทึกไฟล์สำเร็จ: 3d_catalog_professional_colors.html")
+print(f"📄 ขนาดไฟล์: {len(html_content):,} ตัวอักษร")
