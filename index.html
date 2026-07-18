@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional 3D Spare Part Catalog - Refined Fix</title>
+    <title>Professional 3D Spare Part Catalog - Individual Fix</title>
     <style>
         html, body {
             margin: 0;
@@ -209,8 +209,9 @@
     <script>
         let partDatabase = {};
         let selectedPartsCart = {};
+        let targetMeshList = []; // เก็บเฉพาะวัตถุผิวตาข่ายเดี่ยว (Mesh) สำหรับใช้คำสั่งตรวจจับ Raycaster
 
-        // ฟังก์ชันสร้างรายการชิ้นส่วนฝั่ง Sidebar UI
+        // ฟังก์ชันวาดรายการสินค้าชิ้นส่วนในแผงเมนูด้านขวา
         function buildPartsListUI() {
             const partsListUI = document.getElementById('parts-list');
             partsListUI.innerHTML = '';
@@ -229,7 +230,6 @@
             }
         }
 
-        // เมื่อคลิกติ๊กถูกที่กล่องสี่เหลี่ยม ข้อมูลจึงจะยอมเด้งไปโชว์ที่กล่องลิสต์ด้านล่าง
         function togglePart(uniqueId, isChecked) {
             if (isChecked) {
                 if (!selectedPartsCart[uniqueId]) {
@@ -305,15 +305,15 @@
         dirLight.position.set(15, 30, 20);
         scene.add(dirLight);
 
-        // รายการคีย์ข้อมูลจำลองหลักๆ
+        // รายการคีย์ชื่ออะไหล่ตั้งต้นจากคู่มือ Alpha Compact สำหรับหยอดแสดงผล
         const sampleDescriptions = [
-            "Chassis Base Unit", "Drive roller rubber 120mm", "Rewinder Plate Main", "Unwind core 3\" Axle",
-            "Timing belt unit", "Pulley 14-T5 Engine", "Main Drive Motor Unit", "Hand protection cover", 
-            "Dancer complete system", "Rewinder shaft core", "Round belt transmission", "Label sensor OGUTI", 
-            "Label sensor USGT", "Clamp component block"
+            "Chassis Base Unit Frame", "Drive roller rubber 120mm", "Rewinder Plate Main Disk", "Unwind core 3\" Axle",[cite: 1]
+            "Timing belt motor chain", "Pulley 14-T5 Gear", "Main Drive Motor Core", "Hand protection sheet",[cite: 1]
+            "Dancer stabilization system", "Rewinder shaft core steel", "Round belt loop drive", "Label sensor OGUTI",[cite: 1]
+            "Label sensor USGT Ultrasonic", "Clamp component hardware"[cite: 1]
         ];
 
-        // โหลดโมเดล 3D
+        // โหลดโมเดล 3D (.glb) จากระบบคลังโฟลเดอร์
         const filename = "32100033_A_Comp_120_RH.step.glb";
         const loader = new THREE.GLTFLoader();
         let loadedModel;
@@ -327,47 +327,49 @@
             loadedModel.position.y += (loadedModel.position.y - center.y);
             loadedModel.position.z += (loadedModel.position.z - center.z);
             
-            let groupCounter = 1;
+            let counter = 1;
             
-            // ลอการิทึมจำแนกชิ้นส่วนระดับกลุ่มก้อน (Group Isolation Logic) 
-            // แก้ไขปัญหาการคลิกเลือกชิ้นงานแล้วไฮไลท์ลามไปโดนแผ่นอื่น
-            loadedModel.children.forEach((groupObj) => {
-                // ตรวจหา ID ระดับกลุ่มหลักเพื่อทำไดคัตแยกขาดชิ้นต่อชิ้น
-                let targetKey = groupObj.uuid;
-                groupObj.name = targetKey;
+            // ใช้ลอการิทึมเจาะทะลุชั้นกลุ่มโมเดล (Deep Traversal Isolation) เพื่อจับชิ้นส่วนระดับ Mesh ขาดจากกันเด็ดขาด
+            loadedModel.traverse((node) => {
+                if (node.isMesh) {
+                    // บังคับโคลนแยกแยะวัตถุออกจากกลุ่มใหญ่ ป้องกันปัญหาสีไฮไลท์วิ่งติดลามไปทั้งตัวเครื่อง
+                    node.material = node.material.clone();
+                    node.castShadow = true;
+                    node.receiveShadow = true;
+                    
+                    // ฝังรหัสลับเฉพาะตัว UUID เพื่อบังคับชิ้นใครชิ้นมัน 100%
+                    let meshKey = node.uuid;
+                    node.name = meshKey;
+                    
+                    // ดึงเข้าคลังอาร์เรย์อิสระสำหรับรอรับแรงแสง Raycaster ยิงตรวจสอบพิกัด
+                    targetMeshList.push(node);
 
-                // วนลูปโคลน Material ภายในกลุ่ม เพื่อไม่ให้วัตถุแชร์สีร่วมกันเวลาโดน Hover
-                groupObj.traverse((child) => {
-                    if (child.isMesh && child.material) {
-                        child.material = child.material.clone();
-                    }
-                });
-
-                let sampleDesc = sampleDescriptions[groupCounter - 1] || ("Assembly Group Part " + groupCounter);
-                let samplePN = "4000" + String(3200 + groupCounter);
-                
-                // ลงทะเบียนคลังสินค้าแยกชิ้นเดี่ยว
-                partDatabase[targetKey] = {
-                    id: samplePN,
-                    name: sampleDesc,
-                    img: "https://via.placeholder.com/200x120/ffffff/000000?text=Part+" + groupCounter
-                };
-                
-                groupCounter++;
+                    let labelDesc = sampleDescriptions[counter - 1] || ("Component Part Unit " + counter);
+                    let labelPN = "4000" + String(3200 + counter);
+                    
+                    // ลงคลังฐานข้อมูลกลางสินค้าแบบไม่แชร์ร่วมกับส่วนอื่น
+                    partDatabase[meshKey] = {
+                        id: labelPN,
+                        name: labelDesc,
+                        img: "https://via.placeholder.com/200x120/ffffff/000000?text=Part+" + counter
+                    };
+                    
+                    counter++;
+                }
             });
 
             buildPartsListUI();
             scene.add(loadedModel);
         });
 
-        // ================= ระบบ Raycasting (เมาส์ชี้ และ คลิกเปิดเช็คบ็อกซ์) =================
+        // ================= ระบบตรวจจับพิกัดเมาส์ (Raycasting ชิ้นเดี่ยว 100%) =================
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const tooltip = document.getElementById('tooltip');
         const tooltipImg = document.getElementById('tooltip-img');
         const tooltipId = document.getElementById('tooltip-id');
         const tooltipName = document.getElementById('tooltip-name');
-        let currentHighlightedGroup = null;
+        let currentlySelectedMesh = null;
 
         window.addEventListener('mousemove', onMouseMove, false);
         window.addEventListener('click', onModelClick, false);
@@ -380,34 +382,25 @@
             tooltip.style.left = (event.clientX + 15) + 'px';
             tooltip.style.top = (event.clientY + 15) + 'px';
 
-            if (loadedModel) {
+            if (targetMeshList.length > 0) {
                 raycaster.setFromCamera(mouse, camera);
-                // ตรวจจับชนวัตถุระดับกลุ่มโครงสร้างหลัก (children) แทนตัวลูกย่อยลึกๆ
-                const intersects = raycaster.intersectObjects(loadedModel.children, true);
+                // สั่งการให้ Raycaster ยิงแสงชนไปที่วัตถุคลัง Mesh อิสระ (targetMeshList) ตรงๆ โดยไม่เช็ค Group ชั้นนอก 
+                // วิธีนี้จะแก้ไขปัญหาการเรืองแสงลามติดไปเนื้อเดียวกันทั้งตัวเครื่องได้อย่างถาวรครับ
+                const intersects = raycaster.intersectObjects(targetMeshList, false);
 
                 if (intersects.length > 0) {
-                    // หาออบเจกต์ระดับกลุ่มที่อยู่ภายใต้โมเดลหลักโดยตรง
-                    let topGroup = intersects[0].object;
-                    while (topGroup.parent && topGroup.parent !== loadedModel) {
-                        topGroup = topGroup.parent;
-                    }
+                    const hitMesh = intersects[0].object;
                     
-                    if (partDatabase[topGroup.name]) {
-                        if (currentHighlightedGroup !== topGroup) {
-                            // ปิดสีเอฟเฟกต์เก่า
-                            if (currentHighlightedGroup) {
-                                currentHighlightedGroup.traverse((node) => {
-                                    if (node.isMesh) node.material.emissive.setHex(0x000000);
-                                });
-                            }
+                    if (partDatabase[hitMesh.name]) {
+                        if (currentlySelectedMesh !== hitMesh) {
+                            // ปิดสีไฮไลท์ชิ้นส่วนเก่า
+                            if (currentlySelectedMesh) currentlySelectedMesh.material.emissive.setHex(0x000000);
                             
-                            currentHighlightedGroup = topGroup;
-                            // เปิดเอฟเฟกต์สีฟ้าเฉพาะกลุ่มก้อนชิ้นเดี่ยวที่เมาส์ส่องชน
-                            currentHighlightedGroup.traverse((node) => {
-                                if (node.isMesh) node.material.emissive.setHex(0x0e639c);
-                            });
+                            currentlySelectedMesh = hitMesh;
+                            // ไฮไลท์สีฟ้าเรืองแสงเฉพาะเจาะจงเฉพาะชิ้นเดี่ยวที่คุณชี้เท่านั้น!
+                            currentlySelectedMesh.material.emissive.setHex(0x0e639c);
 
-                            const pInfo = partDatabase[topGroup.name];
+                            const pInfo = partDatabase[hitMesh.name];
                             tooltipImg.src = pInfo.img;
                             tooltipId.innerText = "PART NO: " + pInfo.id;
                             tooltipName.innerText = pInfo.name;
@@ -415,12 +408,8 @@
                         }
                     }
                 } else {
-                    if (currentHighlightedGroup) {
-                        currentHighlightedGroup.traverse((node) => {
-                            if (node.isMesh) node.material.emissive.setHex(0x000000);
-                        });
-                    }
-                    currentHighlightedGroup = null;
+                    if (currentlySelectedMesh) currentlySelectedMesh.material.emissive.setHex(0x000000);
+                    currentlySelectedMesh = null;
                     tooltip.style.display = 'none';
                 }
             }
@@ -432,21 +421,18 @@
                 return;
             }
 
-            if (loadedModel) {
+            if (targetMeshList.length > 0) {
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(loadedModel.children, true);
+                const intersects = raycaster.intersectObjects(targetMeshList, false);
 
                 if (intersects.length > 0) {
-                    let topGroup = intersects[0].object;
-                    while (topGroup.parent && topGroup.parent !== loadedModel) {
-                        topGroup = topGroup.parent;
-                    }
+                    const hitMesh = intersects[0].object;
+                    const uniqueId = hitMesh.name;
                     
-                    const uniqueId = topGroup.name;
                     if (partDatabase[uniqueId]) {
                         const cb = document.getElementById(`check-${uniqueId}`);
                         if (cb) {
-                            // คลิกที่โมเดล 3D จะสลับเปลี่ยนสถานะติ๊กถูกฝั่งขวาก่อน จากนั้นลิสต์พาร์ทจะคำนวณลงไปแสดงด้านล่าง
+                            // การคลิกชิ้นส่วนจะทำหน้าที่ "ติ๊กเครื่องหมายถูกฝั่งขวาให้ทำงาน" จากนั้นข้อมูลจะรันเข้าตะกร้าสั่งอะไหล่ด้านล่างทันที
                             cb.checked = !cb.checked;
                             togglePart(uniqueId, cb.checked);
                         }
