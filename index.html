@@ -37,10 +37,11 @@
             border-left: 1px solid var(--border-glass);
             padding: 20px;
             box-shadow: -5px 0 20px rgba(0,0,0,0.05);
-            overflow-y: auto;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
+            height: 100vh;
+            overflow: hidden; /* ล็อคโครงสร้างหลัก */
         }
 
         /* Responsive Settings Mobile (50/50 Layout) */
@@ -54,6 +55,7 @@
                 border-top: 1px solid var(--border-glass);
                 padding: 15px;
                 box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+                height: 50vh;
             }
         }
 
@@ -65,6 +67,7 @@
             border-bottom: 2px solid var(--primary);
             padding-bottom: 10px;
             margin-bottom: 15px;
+            flex-shrink: 0;
         }
         .sidebar-header h3 { margin: 0; font-size: 18px; color: #222; }
         
@@ -86,13 +89,16 @@
         }
         .manual-link-btn:hover { background: var(--primary); color: white; transform: scale(1.05); }
 
-        /* 🛒 ตะกร้าสินค้าแบบดับเบิลคลิกเพื่อเปิด */
+        /* 🛒 ตะกร้าสินค้าแบบคลิกเพื่อเปิด/ปิด */
         #cart-section {
             background: #eef2f7; 
             border-radius: 12px;
             margin-bottom: 15px; 
             border: 1px solid #b0c4de;
             overflow: hidden;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
         }
         
         .cart-header-clickable {
@@ -110,7 +116,7 @@
         }
         .cart-header-clickable:hover { background: #cbd5e1; }
         
-        /* รีมาร์คจำนวนชิ้นงานเด่นๆ ตอนที่ยังไม่ขยาย */
+        /* ปรับดีไซน์ Remark จำนวนชิ้นงานให้อยู่ในแถวเดียวกันอย่างสวยงาม */
         .cart-remark-badge {
             color: var(--danger);
             font-weight: 800;
@@ -119,39 +125,28 @@
             border-radius: 4px;
             margin-left: 5px;
             font-size: 12px;
+            white-space: nowrap;
+            display: inline-block;
         }
         
+        /* สัดส่วนตัวกล่องด้านในตะกร้า: ตั้งค่าให้จำกัดขนาดความสูงและเปิดเลื่อน Scroll ได้ */
         #cart-content-wrapper {
-            padding: 12px;
+            padding: 0 12px 12px 12px;
             display: none; /* เริ่มต้นซ่อนไว้ */
             background: #eef2f7;
+        }
+        
+        #cart-items-list {
+            max-height: 160px; /* จำกัดความสูงไม่ให้กินพื้นที่รายการสินค้าหลัก */
+            overflow-y: auto;   /* เปิดให้สามารถเลื่อนสกรอลล์ขึ้นลงได้อิสระเมื่อของมีจำนวนมาก */
+            padding-top: 12px;
         }
         
         .cart-item-row { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; color: #555; border-bottom: 1px solid #ddd; align-items: center; }
         .remove-btn { color: var(--danger); cursor: pointer; font-weight: bold; margin-left: 8px; font-size: 14px; }
 
-        /* ปุ่มดาวน์โหลด PDF */
-        .pdf-download-btn {
-            width: 100%;
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 13px;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-        .pdf-download-btn:hover { background: #1e7e34; }
-
         /* รายการอะไหล่ทั้งหมด */
-        .parts-container { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+        .parts-container { overflow-y: auto; flex-grow: 1; padding-right: 5px; margin-bottom: 15px; }
         .section-title { font-weight: bold; color: var(--primary); margin: 16px 0 6px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid var(--primary); padding-left: 6px; }
         
         .part-item { 
@@ -166,7 +161,35 @@
         .add-cart-btn { background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: background 0.2s; white-space: nowrap; }
         .add-cart-btn:hover { background: #004085; }
 
-        /* CSS สำหรับส่งออก PDF */
+        /* 📄 ส่วนท้ายของเมนู (Sidebar Footer) สำหรับวางปุ่มออกเอกสาร PDF ไว้ด้านล่างสุด */
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-glass);
+            flex-shrink: 0;
+            background: var(--bg-glass);
+        }
+
+        .pdf-download-btn {
+            width: 100%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 2px 6px rgba(40, 167, 69, 0.2);
+        }
+        .pdf-download-btn:hover { background: #1e7e34; }
+
+        /* CSS สำหรับส่งออกหน้ากระดาษ PDF */
         @media print {
             body * { visibility: hidden; }
             #print-pdf-layout, #print-pdf-layout * { visibility: visible; }
@@ -184,7 +207,7 @@
 </head>
 <body>
 
-    <!-- Layout พิมพ์เอกสาร PDF -->
+    <!-- Layout สำหรับพิมพ์เอกสารสั่งซื้อส่งออกไฟล์ PDF -->
     <div id="print-pdf-layout">
         <div style="border-bottom: 3px solid #0056b3; padding-bottom: 10px; margin-bottom: 20px;">
             <h2 style="margin: 0; color: #0056b3;">ใบรายการความต้องการอะไหล่ / Spare Parts Request</h2>
@@ -219,29 +242,35 @@
                 </a>
             </div>
             
-            <!-- ตะกร้าสินค้า -->
+            <!-- ตะกร้าสินค้าแบบกดพับ/เปิดสไลด์ดูรายการ -->
             <div id="cart-section">
-                <div class="cart-header-clickable" ondblclick="toggleCartView()" onclick="toggleCartView()" title="กดเพื่อเปิด/ปิดดูรายการด้านใน">
+                <div class="cart-header-clickable" onclick="toggleCartView()" title="กดเพื่อเปิด/ปิดดูรายละเอียดภายในตะกร้า">
                     <div>
                         <span>🛒 ตะกร้าอะไหล่ที่เลือก</span>
-                        <!-- ช่อง Remark แจ้งเตือนจำนวนชิ้นงานด้านหลังบรรทัดตอนที่พับอยู่ -->
                         <span id="cart-remark-badge" class="cart-remark-badge">[มีอะไหล่ในตะกร้า 0 ชิ้น]</span>
                     </div>
                     <span id="toggle-arrow" style="font-size: 11px; color: #666;">กดเพื่อขยายดูรายละเอียด ⚡</span>
                 </div>
                 <div id="cart-content-wrapper">
+                    <!-- รายการอะไหล่ด้านในเปิดสกรอลล์เลื่อนขึ้นลงได้เต็มที่เมื่อของเยอะ -->
                     <div id="cart-items-list">
                         <div style="color:#888; font-size:12px; text-align:center; padding:5px;">ยังไม่ได้เลือกชิ้นส่วน</div>
                     </div>
-                    <button class="pdf-download-btn" onclick="generatePartsPDF()">📄 ออกเอกสารรายการอะไหล่ (PDF)</button>
                 </div>
             </div>
 
+            <!-- กล่องรายการสินค้าหลักตรงกลางเปิดเลื่อนขึ้นลงปกติ -->
             <div class="parts-container" id="dynamic-parts-list"></div>
+            
+            <!-- 📄 ย้ายแถบปุ่มดาวน์โหลดเอกสาร PDF มาไว้ที่ท้ายสุดของเมนูด้านล่างหน้าจอ -->
+            <div class="sidebar-footer">
+                <button class="pdf-download-btn" onclick="generatePartsPDF()">📄 ออกเอกสารรายการอะไหล่ (PDF)</button>
+            </div>
         </div>
     </div>
 
     <script>
+        // ฐานข้อมูลรหัสอะไหล่[cite: 1]
         const completePdfDatabase = {
             "Baugr. A: Gehäuse / Chassis": [
                 { pn: "40003271", name: "Cover with controller RH (base)" },
@@ -297,13 +326,12 @@
             const remarkBadge = document.getElementById('cart-remark-badge');
             const keys = Object.keys(shoppingCart);
             
-            // คำนวณจำนวนชิ้นงานชิ้นส่วนทั้งหมดในระบบ
             let totalPieces = 0;
             keys.forEach(pn => {
                 totalPieces += shoppingCart[pn].qty;
             });
 
-            // ปรับปรุงข้อความ Remark ด้านหลังบรรทัดหลักตอนที่ยังไม่ขยาย[cite: 1]
+            // ปรับข้อความตัวอักษรบอกจำนวนชิ้นงานรวมในตะกร้าให้อัปเดต Real-time[cite: 1]
             remarkBadge.innerText = `[มีอะไหล่ในตะกร้า ${totalPieces} ชิ้น]`;
             
             if (keys.length === 0) {
@@ -358,7 +386,7 @@
             window.print();
         };
 
-        // Render รายการอะไหล่ลงหน้าต่าง UI
+        // Render รายการอะไหล่หลัก
         const listContainer = document.getElementById('dynamic-parts-list');
         Object.entries(completePdfDatabase).forEach(([section, items]) => {
             const secTitle = document.createElement('div');
@@ -380,7 +408,7 @@
             });
         });
 
-        // Initialize 3D WebGL Canvas
+        // Initialize 3D Engine
         const container3d = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xeeeeee);
