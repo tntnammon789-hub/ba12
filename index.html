@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional 3D Spare Part Catalog - 1-to-1 Independent Parts</title>
+    <title>Professional 3D Spare Part Catalog - Independent Selection</title>
     <style>
         html, body {
             margin: 0;
@@ -207,16 +207,15 @@
     </div>
 
     <script>
-        // ประกาศฐานข้อมูลพาร์ทเริ่มต้นเป็นออบเจกต์ว่าง เพื่อรอรับการทำงานแบบ Dynamic จากตัวโมเดล 3D
         let partDatabase = {};
         let selectedPartsCart = {};
 
-        // ฟังก์ชันสร้างรายการชิ้นส่วนฝั่ง Sidebar UI แบบไดนามิกหลังจากอ่านโมเดลเสร็จ
+        // ฟังก์ชันสร้างรายการชิ้นส่วนฝั่ง Sidebar UI
         function buildPartsListUI() {
             const partsListUI = document.getElementById('parts-list');
-            partsListUI.innerHTML = ''; // เคลียร์ค่าเก่าก่อนสร้าง
+            partsListUI.innerHTML = '';
             
-            for (const [meshName, info] of Object.entries(partDatabase)) {
+            for (const [uniqueId, info] of Object.entries(partDatabase)) {
                 const item = document.createElement('div');
                 item.className = 'part-item';
                 item.innerHTML = `
@@ -224,48 +223,50 @@
                         <span class="part-id">P/N: ${info.id}</span>
                         <span class="part-name">${info.name}</span>
                     </div>
-                    <input type="checkbox" id="check-${meshName}" onchange="togglePart('${meshName}', this.checked)">
+                    <input type="checkbox" id="check-${uniqueId}" onchange="togglePart('${uniqueId}', this.checked)">
                 `;
                 partsListUI.appendChild(item);
             }
         }
 
-        function togglePart(meshName, isChecked) {
+        // เมื่อมีการคลิกติ๊กถูกที่กล่องสี่เหลี่ยมด้านข้าง จึงจะเพิ่มรายการลงในช่องรายการด้านล่าง
+        function togglePart(uniqueId, isChecked) {
             if (isChecked) {
-                if (!selectedPartsCart[meshName]) {
-                    selectedPartsCart[meshName] = 1;
+                if (!selectedPartsCart[uniqueId]) {
+                    selectedPartsCart[uniqueId] = 1;
                 }
             } else {
-                delete selectedPartsCart[meshName];
+                delete selectedPartsCart[uniqueId];
             }
             updateCartUI();
         }
 
-        function adjustQty(meshName, change) {
-            if (selectedPartsCart[meshName]) {
-                selectedPartsCart[meshName] += change;
-                if (selectedPartsCart[meshName] <= 0) {
-                    delete selectedPartsCart[meshName];
-                    const cb = document.getElementById(`check-${meshName}`);
+        function adjustQty(uniqueId, change) {
+            if (selectedPartsCart[uniqueId]) {
+                selectedPartsCart[uniqueId] += change;
+                if (selectedPartsCart[uniqueId] <= 0) {
+                    delete selectedPartsCart[uniqueId];
+                    const cb = document.getElementById(`check-${uniqueId}`);
                     if(cb) cb.checked = false;
                 }
                 updateCartUI();
             }
         }
 
-        function removePart(meshName) {
-            delete selectedPartsCart[meshName];
-            const cb = document.getElementById(`check-${meshName}`);
+        function removePart(uniqueId) {
+            delete selectedPartsCart[uniqueId];
+            const cb = document.getElementById(`check-${uniqueId}`);
             if(cb) cb.checked = false;
             updateCartUI();
         }
 
+        // แสดงผลเฉพาะรายการอะไหล่ที่ถูกเลือก (ติ๊กถูก) เท่านั้น
         function updateCartUI() {
             const cartListUI = document.getElementById('cart-list');
             cartListUI.innerHTML = '';
             
-            for (const [meshName, qty] of Object.entries(selectedPartsCart)) {
-                const info = partDatabase[meshName];
+            for (const [uniqueId, qty] of Object.entries(selectedPartsCart)) {
+                const info = partDatabase[uniqueId];
                 const item = document.createElement('div');
                 item.className = 'cart-item';
                 item.innerHTML = `
@@ -274,10 +275,10 @@
                         <span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${info.name}</span>
                     </div>
                     <div class="qty-controls">
-                        <button class="btn-qty" onclick="adjustQty('${meshName}', -1)">-</button>
+                        <button class="btn-qty" onclick="adjustQty('${uniqueId}', -1)">-</button>
                         <span>${qty}</span>
-                        <button class="btn-qty" onclick="adjustQty('${meshName}', 1)">+</button>
-                        <button class="btn-remove" onclick="removePart('${meshName}')">✕</button>
+                        <button class="btn-qty" onclick="adjustQty('${uniqueId}', 1)">+</button>
+                        <button class="btn-remove" onclick="removePart('${uniqueId}')">✕</button>
                     </div>
                 `;
                 cartListUI.appendChild(item);
@@ -305,9 +306,9 @@
         dirLight.position.set(15, 30, 20);
         scene.add(dirLight);
 
-        // รายการข้อมูลตัวอย่างเพื่อนำมาหยอดชิ้นส่วนหลัก ๆ ให้สมจริงในช่วงแรก
+        // รายการคีย์ข้อมูลจำลองสำหรับชิ้นส่วนแกนและชิ้นส่วนหลัก
         const sampleDescriptions = [
-            "Gehäuse Alpha Compact / Chassis", "Drive roller rubber 120mm", "Rewinder Plate", "Unwind core 3\"",[cite: 1]
+            "Cover Alpha Compact", "Drive roller rubber 120mm", "Rewinder Plate", "Unwind core 3\"",[cite: 1]
             "Timing belt", "Pulley 14-T5", "Main Drive Motor", "Hand protection", "Dancer complete",[cite: 1]
             "Rewinder shaft", "Round belt", "Label sensor OGUTI", "Label sensor USGT", "Clamp"[cite: 1]
         ];
@@ -328,44 +329,40 @@
             
             let meshCounter = 1;
             
-            // วนลูปประมวลผลแยกชิ้นส่วนแบบเด็ดขาด ชิ้นใครชิ้นมัน 100%
+            // ลอการิทึมสแกนโครงสร้างเชิงลึกเพื่อบังคับตัดไดคัต (Mesh Isolation Logic) แยกเดี่ยวชิ้นต่อชิ้น
             loadedModel.traverse((child) => {
                 if (child.isMesh) {
+                    // สร้าง Material สำเนาแยกขาดจากวัตถุชิ้นอื่น ป้องกันปัญหาสีไฮไลท์วิ่งไปโดนจุดที่แชร์ Material ร่วมกัน
+                    if (child.material) {
+                        child.material = child.material.clone();
+                    }
+                    
                     child.castShadow = true;
                     child.receiveShadow = true;
                     
-                    // อ่านชื่อเดิมจากไฟล์ CAD ถ้าไม่มีหรือชื่อซ้ำให้ตั้งรหัสเฉพาะตัวแบบไม่ซ้ำ
-                    let rawName = child.name ? child.name.trim() : "";
-                    let uniqueKey = rawName;
+                    // วิเคราะห์และออกรหัสภายในเฉพาะชิ้น (UUID-Based Isolation) ป้องกันปัญหาการจัดกลุ่มชนกัน
+                    let targetKey = child.uuid;
+                    child.name = targetKey;
                     
-                    if (!uniqueKey || partDatabase[uniqueKey]) {
-                        uniqueKey = "Component_" + String(meshCounter).padStart(3, '0');
-                    }
-                    
-                    // ผูกคีย์เฉพาะตัวลงในโมเดล
-                    child.name = uniqueKey;
-                    
-                    // ดึงคำอธิบายตัวอย่างมาหยอด หรือสร้างชื่อเผื่อไว้ให้คุณแก้ไขตารางข้อมูลในภายหลังได้ง่าย
-                    let sampleDesc = sampleDescriptions[meshCounter - 1] || (uniqueKey + " Description");
+                    let sampleDesc = sampleDescriptions[meshCounter - 1] || ("Component Part " + meshCounter);
                     let samplePN = "4000" + String(3200 + meshCounter);
                     
-                    // ลงทะเบียนพาร์ทแยกเดี่ยวอิสระในฐานข้อมูลหลัก
-                    partDatabase[uniqueKey] = {
+                    // ลงทะเบียนจับคู่ชิ้นส่วนแบบ 1-to-1 แยกขาดจากกันเด็ดขาด
+                    partDatabase[targetKey] = {
                         id: samplePN,
                         name: sampleDesc,
-                        img: "https://via.placeholder.com/200x120/ffffff/000000?text=" + uniqueKey
+                        img: "https://via.placeholder.com/200x120/ffffff/000000?text=Part+" + meshCounter
                     };
                     
                     meshCounter++;
                 }
             });
 
-            // เมื่อประมวลผลชิ้นส่วน 3D เสร็จสิ้น ให้ทำการสร้างแถบรายการฝั่งขวาทันที
             buildPartsListUI();
             scene.add(loadedModel);
         });
 
-        // ================= ระบบ Raycasting (เมาส์ชี้ และ คลิกชิ้นส่วนส่งลงตะกร้า) =================
+        // ================= ระบบ Raycasting (เมาส์ชี้ และ คลิกเลือกกล่องสี่เหลี่ยมด้านข้าง) =================
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const tooltip = document.getElementById('tooltip');
@@ -397,7 +394,8 @@
                             if (intersectedObject) intersectedObject.material.emissive.setHex(0x000000);
                             
                             intersectedObject = hitObj;
-                            intersectedObject.material.emissive.setHex(0x0e639c); // ไฮไลท์เรืองแสงชิ้นส่วนเดี่ยวที่ชี้
+                            // ไฮไลท์เรืองแสงสีฟ้าเฉพาะชิ้นเดี่ยวที่เมาส์ส่องถึงอย่างแม่นยำ
+                            intersectedObject.material.emissive.setHex(0x0e639c);
 
                             const pInfo = partDatabase[hitObj.name];
                             tooltipImg.src = pInfo.img;
@@ -416,7 +414,6 @@
 
         function onModelClick(event) {
             const rect = renderer.domElement.getBoundingClientRect();
-            // ตรวจสอบพิกัดการคลิกให้อยู่ภายในกรอบพื้นที่หน้าจอ 3D เท่านั้น
             if (event.clientX > rect.right || event.clientX < rect.left || event.clientY > rect.bottom || event.clientY < rect.top) {
                 return;
             }
@@ -427,18 +424,14 @@
 
                 if (intersects.length > 0) {
                     const hitObj = intersects[0].object;
-                    const meshName = hitObj.name;
+                    const uniqueId = hitObj.name;
                     
-                    if (partDatabase[meshName]) {
-                        const cb = document.getElementById(`check-${meshName}`);
-                        
+                    if (partDatabase[uniqueId]) {
+                        const cb = document.getElementById(`check-${uniqueId}`);
                         if (cb) {
-                            if (!cb.checked) {
-                                cb.checked = true;
-                                togglePart(meshName, true);
-                            } else {
-                                adjustQty(meshName, 1); // คลิกซ้ำเพื่อบวกจำนวนเพิ่ม
-                            }
+                            // การกดที่โมเดล 3D จะเปลี่ยนไปทำหน้าที่ "ติ๊กถูกให้กล่องสี่เหลี่ยมฝั่งขวา" ก่อน จากนั้นพาร์ทลิสต์จึงจะโชว์ด้านล่าง
+                            cb.checked = !cb.checked;
+                            togglePart(uniqueId, cb.checked);
                         }
                     }
                 }
