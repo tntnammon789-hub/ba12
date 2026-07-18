@@ -3,27 +3,41 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional 3D Spare Part Catalog - Full Database</title>
+    <title>Professional 3D Spare Part Catalog - 1-to-1 Independent Parts</title>
     <style>
-        body {
+        html, body {
             margin: 0;
             padding: 0;
+            width: 100%;
+            height: 100vh;
             overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #1a1a1a;
             color: #ffffff;
-            display: flex;
         }
 
-        /* พื้นหลังหน้าจอ 3D */
+        .wrapper {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* หน้าจอแสดงผล 3D (75%) */
         #canvas-container {
             width: 75vw;
             height: 100vh;
             position: relative;
+            background-color: #222222;
         }
-        canvas { width: 100%; height: 100%; display: block; }
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            cursor: pointer;
+        }
 
-        /* Sidebar รายการด้านข้างระดับมืออาชีพ */
+        /* Sidebar รายการด้านข้าง (25%) */
         #sidebar {
             width: 25vw;
             height: 100vh;
@@ -32,12 +46,13 @@
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
+            z-index: 10;
         }
 
         .sidebar-header {
             padding: 20px;
             background-color: #0e639c;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
             text-align: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -46,18 +61,17 @@
         .section-title {
             padding: 10px 20px;
             background-color: #333333;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: #aaa;
             border-bottom: 1px solid #444;
         }
 
-        /* ลิสต์รายการชิ้นส่วนทั้งหมด */
         #parts-list {
             flex: 1;
             overflow-y: auto;
-            padding: 10px;
+            padding: 15px;
         }
 
         .part-item {
@@ -78,10 +92,10 @@
         }
 
         .part-info { display: flex; flex-direction: column; max-width: 80%; }
-        .part-id { font-size: 0.8rem; color: #0e639c; font-weight: bold; }
-        .part-name { font-size: 0.95rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+        .part-id { font-size: 0.75rem; color: #0e639c; font-weight: bold; }
+        .part-name { font-size: 0.9rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
 
-        /* ช่องตระกร้าสั่งอะไหล่ที่เลือก */
+        /* ตะกร้าสรุปรายการสั่งอะไหล่ด้านล่าง */
         #cart-container {
             height: 40vh;
             background-color: #1e1e1e;
@@ -104,20 +118,21 @@
             padding: 8px 12px;
             margin-bottom: 6px;
             border-radius: 4px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            border-left: 4px solid #0e639c;
         }
 
         .qty-controls {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .btn-qty {
             background-color: #0e639c;
             color: white;
             border: none;
-            padding: 2px 8px;
+            padding: 2px 6px;
             cursor: pointer;
             border-radius: 3px;
             font-weight: bold;
@@ -133,9 +148,9 @@
             border-radius: 3px;
         }
 
-        /* Tooltip โผล่ตามตำแหน่งเมาส์ชี้บนโมเดล */
+        /* Tooltip โผล่ตามตำแหน่งเมาส์ชี้ */
         #tooltip {
-            position: absolute;
+            position: fixed;
             display: none;
             background-color: rgba(30, 30, 30, 0.95);
             border: 2px solid #0e639c;
@@ -144,7 +159,7 @@
             pointer-events: none;
             z-index: 100;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            width: 240px;
+            width: 220px;
         }
 
         #tooltip img {
@@ -157,7 +172,7 @@
         }
 
         .tooltip-title { font-weight: bold; color: #0e639c; font-size: 0.85rem; }
-        .tooltip-name { font-size: 0.95rem; margin-top: 2px; }
+        .tooltip-name { font-size: 0.9rem; margin-top: 2px; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -165,81 +180,54 @@
 </head>
 <body>
 
-    <!-- พื้นที่แสดงผล 3D -->
-    <div id="canvas-container">
-        <div id="tooltip">
-            <img id="tooltip-img" src="" alt="Part Image">
-            <div id="tooltip-id" class="tooltip-title">PART NO: </div>
-            <div id="tooltip-name" class="tooltip-name">Part Name</div>
+    <div class="wrapper">
+        
+        <!-- ฝั่งหน้าจอ 3D -->
+        <div id="canvas-container">
+            <div id="tooltip">
+                <img id="tooltip-img" src="" alt="Part Image">
+                <div id="tooltip-id" class="tooltip-title">PART NO: </div>
+                <div id="tooltip-name" class="tooltip-name">Part Name</div>
+            </div>
         </div>
-    </div>
 
-    <!-- แผงควบคุมและรายการด้านข้าง -->
-    <div id="sidebar">
-        <div class="sidebar-header">ALPHA COMPACT SPARE PARTS</div>
-        
-        <div class="section-title">Available Parts (Hover/Select)</div>
-        <div id="parts-list"></div>
-        
-        <div class="section-title">Selected Parts List (Cart)</div>
-        <div id="cart-container">
-            <div id="cart-list"></div>
+        <!-- ฝั่งแผงควบคุมและรายการด้านข้าง -->
+        <div id="sidebar">
+            <div class="sidebar-header">ALPHA COMPACT LH / RH</div>[cite: 1]
+            
+            <div class="section-title">Available Parts (Hover/Select)</div>
+            <div id="parts-list"></div>
+            
+            <div class="section-title">Selected Parts List (Cart)</div>
+            <div id="cart-container">
+                <div id="cart-list"></div>
+            </div>
         </div>
+
     </div>
 
     <script>
-        // 1. โหลดฐานข้อมูลพาร์ทอะไหล่แบบเต็มจากคู่มือเครื่อง (Alpha Compact)
-        const partDatabase = {
-            "Chassis_Cover_LH": { id: "40003272", name: "Cover with controller LH", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Cover+LH" },
-            "Chassis_Cover_RH": { id: "40003271", name: "Cover with controller RH", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Cover+RH" },
-            "Deckel_Alpha": { id: "32912434", name: "Deckel Alpha Compact", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Deckel+Alpha" },
-            "Power_Pack_LH": { id: "40003268", name: "Netzteil / Power pack LH", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Power+Pack+LH" },
-            "Power_Pack_RH": { id: "40003269", name: "Netzteil / Power pack RH", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Power+Pack+RH" },
-            "CPU_IO_Board": { id: "33016858", name: "CPU/IO-Board", img: "https://via.placeholder.com/200x120/ffffff/000000?text=CPU+IO+Board" },
-            "Motor_Board": { id: "33016788", name: "Motor-Board", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Motor+Board" },
-            "Main_Switch": { id: "32909028", name: "Geräteschalter / Main switch", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Main+Switch" },
-            
-            "Drive_Roller_Corund_120": { id: "32901023", name: "Drive roller corund 120mm", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Corund+120mm" },
-            "Drive_Roller_Rubber_120": { id: "32901027", name: "Drive roller rubber 120mm", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Rubber+120mm" },
-            "Drive_Roller_Corund_150": { id: "32901024", name: "Drive roller corund 150mm", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Corund+150mm" },
-            "Drive_Roller_Rubber_150": { id: "32901028", name: "Drive roller rubber 150mm", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Rubber+150mm" },
-            "Timing_Belt": { id: "33001631", name: "Zahnriemen / Timing belt", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Timing+Belt" },
-            "Pulley_Belt": { id: "33001636", name: "Zahnriemenrad / Pulley 14-T5", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Pulley+14-T5" },
-            "Main_Motor": { id: "33016851", name: "Motor / Main Drive Motor", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Main+Motor" },
-            "Hand_Protection": { id: "35001958", name: "Eingreifschutz / Hand protection", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Hand+Protection" },
-            
-            "Dancer_Arm": { id: "35001797", name: "Tänzer / Dancer complete", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Dancer+Arm" },
-            "Rewinder_Shaft_120": { id: "35001777", name: "Rewinder shaft 120mm", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Rewind+Shaft+120" },
-            "Rewinder_Shaft_150": { id: "35001926", name: "Rewinder shaft 150mm", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Rewind+Shaft+150" },
-            "Round_Belt": { id: "33005257", name: "Rundriemen / Round belt", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Round+Belt" },
-            "Rewinder_Plate": { id: "32907671", name: "Aufspullteller / Rewinder plate", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Rewinder+Plate" },
-            "Rewind_Core": { id: "32911430", name: "Aufspulkern / Rewind core", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Rewind+Core" },
-            
-            "Unwinder_Arm_120_LH": { id: "35002061", name: "Unwinder arm 120mm LH", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Unwind+Arm+120LH" },
-            "Unwinder_Arm_120_RH": { id: "35001873", name: "Unwinder arm 120mm RH", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Unwind+Arm+120RH" },
-            "Unwind_Core_3": { id: "33001934", name: "Abspulkern 3\" / Unwind core", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Unwind+Core+3" },
-            "Brake_Belt": { id: "33010487", name: "Bremsband / Brake belt", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Brake+Belt" },
-            
-            "Label_Sensor_Oguti": { id: "33090245", name: "Label sensor OGUTI", img: "https://via.placeholder.com/200x120/ffffff/000000?text=OGUTI+Sensor" },
-            "Label_Sensor_USGT": { id: "33010671", name: "Label sensor USGT Ultrasonic", img: "https://via.placeholder.com/200x120/ffffff/000000?text=USGT+Sensor" },
-            "Clamp_Block": { id: "33001556", name: "Klemmstück / Clamp", img: "https://via.placeholder.com/200x120/ffffff/000000?text=Clamp+Block" }
-        };
-
+        // ประกาศฐานข้อมูลพาร์ทเริ่มต้นเป็นออบเจกต์ว่าง เพื่อรอรับการทำงานแบบ Dynamic จากตัวโมเดล 3D
+        let partDatabase = {};
         let selectedPartsCart = {};
 
-        // แสดงรายการชิ้นส่วนทั้งหมดใน UI Sidebar
-        const partsListUI = document.getElementById('parts-list');
-        for (const [meshName, info] of Object.entries(partDatabase)) {
-            const item = document.createElement('div');
-            item.className = 'part-item';
-            item.innerHTML = `
-                <div class="part-info">
-                    <span class="part-id">P/N: ${info.id}</span>
-                    <span class="part-name">${info.name}</span>
-                </div>
-                <input type="checkbox" id="check-${meshName}" onchange="togglePart('${meshName}', this.checked)">
-            `;
-            partsListUI.appendChild(item);
+        // ฟังก์ชันสร้างรายการชิ้นส่วนฝั่ง Sidebar UI แบบไดนามิกหลังจากอ่านโมเดลเสร็จ
+        function buildPartsListUI() {
+            const partsListUI = document.getElementById('parts-list');
+            partsListUI.innerHTML = ''; // เคลียร์ค่าเก่าก่อนสร้าง
+            
+            for (const [meshName, info] of Object.entries(partDatabase)) {
+                const item = document.createElement('div');
+                item.className = 'part-item';
+                item.innerHTML = `
+                    <div class="part-info">
+                        <span class="part-id">P/N: ${info.id}</span>
+                        <span class="part-name">${info.name}</span>
+                    </div>
+                    <input type="checkbox" id="check-${meshName}" onchange="togglePart('${meshName}', this.checked)">
+                `;
+                partsListUI.appendChild(item);
+            }
         }
 
         function togglePart(meshName, isChecked) {
@@ -258,7 +246,8 @@
                 selectedPartsCart[meshName] += change;
                 if (selectedPartsCart[meshName] <= 0) {
                     delete selectedPartsCart[meshName];
-                    document.getElementById(`check-${meshName}`).checked = false;
+                    const cb = document.getElementById(`check-${meshName}`);
+                    if(cb) cb.checked = false;
                 }
                 updateCartUI();
             }
@@ -266,7 +255,8 @@
 
         function removePart(meshName) {
             delete selectedPartsCart[meshName];
-            document.getElementById(`check-${meshName}`).checked = false;
+            const cb = document.getElementById(`check-${meshName}`);
+            if(cb) cb.checked = false;
             updateCartUI();
         }
 
@@ -280,7 +270,7 @@
                 item.className = 'cart-item';
                 item.innerHTML = `
                     <div style="display:flex; flex-direction:column; max-width:60%;">
-                        <span style="font-weight:bold; font-size:0.8rem; color:#0e639c;">${info.id}</span>
+                        <span style="font-weight:bold; font-size:0.75rem; color:#0e639c;">${info.id}</span>
                         <span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${info.name}</span>
                     </div>
                     <div class="qty-controls">
@@ -294,7 +284,7 @@
             }
         }
 
-        // ================= Three.js Engine =================
+        // ================= เอนจิ้นหลัก Three.js =================
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x222222);
@@ -315,7 +305,14 @@
         dirLight.position.set(15, 30, 20);
         scene.add(dirLight);
 
-        // โหลดชิ้นงาน 3D จากโฟลเดอร์ GitHub
+        // รายการข้อมูลตัวอย่างเพื่อนำมาหยอดชิ้นส่วนหลัก ๆ ให้สมจริงในช่วงแรก
+        const sampleDescriptions = [
+            "Gehäuse Alpha Compact / Chassis", "Drive roller rubber 120mm", "Rewinder Plate", "Unwind core 3\"",[cite: 1]
+            "Timing belt", "Pulley 14-T5", "Main Drive Motor", "Hand protection", "Dancer complete",[cite: 1]
+            "Rewinder shaft", "Round belt", "Label sensor OGUTI", "Label sensor USGT", "Clamp"[cite: 1]
+        ];
+
+        // โหลดโมเดล 3D
         const filename = "32100033_A_Comp_120_RH.step.glb";
         const loader = new THREE.GLTFLoader();
         let loadedModel;
@@ -329,30 +326,46 @@
             loadedModel.position.y += (loadedModel.position.y - center.y);
             loadedModel.position.z += (loadedModel.position.z - center.z);
             
-            // วนลูปจับคู่ชิ้นส่วนในไฟล์โมเดลเข้ากับฐานข้อมูลพาร์ทแบบอัตโนมัติ
-            let index = 0;
-            const keys = Object.keys(partDatabase);
+            let meshCounter = 1;
+            
+            // วนลูปประมวลผลแยกชิ้นส่วนแบบเด็ดขาด ชิ้นใครชิ้นมัน 100%
             loadedModel.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
                     
-                    // สุ่มจับคู่ชื่อเพื่อเปิดระบบ Raycaster ให้ทำงานได้ทุกชิ้นส่วนย่อย
-                    if(keys[index]) {
-                        child.name = keys[index];
-                        index++;
-                    } else {
-                        // หากมีจำนวนชิ้นชิ้นส่วนใน Mesh มากกว่า ให้วนซ้ำกลุ่มเดิม
-                        child.name = keys[index % keys.length];
-                        index++;
+                    // อ่านชื่อเดิมจากไฟล์ CAD ถ้าไม่มีหรือชื่อซ้ำให้ตั้งรหัสเฉพาะตัวแบบไม่ซ้ำ
+                    let rawName = child.name ? child.name.trim() : "";
+                    let uniqueKey = rawName;
+                    
+                    if (!uniqueKey || partDatabase[uniqueKey]) {
+                        uniqueKey = "Component_" + String(meshCounter).padStart(3, '0');
                     }
+                    
+                    // ผูกคีย์เฉพาะตัวลงในโมเดล
+                    child.name = uniqueKey;
+                    
+                    // ดึงคำอธิบายตัวอย่างมาหยอด หรือสร้างชื่อเผื่อไว้ให้คุณแก้ไขตารางข้อมูลในภายหลังได้ง่าย
+                    let sampleDesc = sampleDescriptions[meshCounter - 1] || (uniqueKey + " Description");
+                    let samplePN = "4000" + String(3200 + meshCounter);
+                    
+                    // ลงทะเบียนพาร์ทแยกเดี่ยวอิสระในฐานข้อมูลหลัก
+                    partDatabase[uniqueKey] = {
+                        id: samplePN,
+                        name: sampleDesc,
+                        img: "https://via.placeholder.com/200x120/ffffff/000000?text=" + uniqueKey
+                    };
+                    
+                    meshCounter++;
                 }
             });
 
+            // เมื่อประมวลผลชิ้นส่วน 3D เสร็จสิ้น ให้ทำการสร้างแถบรายการฝั่งขวาทันที
+            buildPartsListUI();
             scene.add(loadedModel);
         });
 
-        // ================= ระบบจับพิกัดเมาส์ชี้วัตถุ 3D (Raycasting) =================
+        // ================= ระบบ Raycasting (เมาส์ชี้ และ คลิกชิ้นส่วนส่งลงตะกร้า) =================
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const tooltip = document.getElementById('tooltip');
@@ -362,6 +375,7 @@
         let intersectedObject = null;
 
         window.addEventListener('mousemove', onMouseMove, false);
+        window.addEventListener('click', onModelClick, false);
 
         function onMouseMove(event) {
             const rect = renderer.domElement.getBoundingClientRect();
@@ -383,7 +397,7 @@
                             if (intersectedObject) intersectedObject.material.emissive.setHex(0x000000);
                             
                             intersectedObject = hitObj;
-                            intersectedObject.material.emissive.setHex(0x0e639c);
+                            intersectedObject.material.emissive.setHex(0x0e639c); // ไฮไลท์เรืองแสงชิ้นส่วนเดี่ยวที่ชี้
 
                             const pInfo = partDatabase[hitObj.name];
                             tooltipImg.src = pInfo.img;
@@ -396,6 +410,37 @@
                     if (intersectedObject) intersectedObject.material.emissive.setHex(0x000000);
                     intersectedObject = null;
                     tooltip.style.display = 'none';
+                }
+            }
+        }
+
+        function onModelClick(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            // ตรวจสอบพิกัดการคลิกให้อยู่ภายในกรอบพื้นที่หน้าจอ 3D เท่านั้น
+            if (event.clientX > rect.right || event.clientX < rect.left || event.clientY > rect.bottom || event.clientY < rect.top) {
+                return;
+            }
+
+            if (loadedModel) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(loadedModel.children, true);
+
+                if (intersects.length > 0) {
+                    const hitObj = intersects[0].object;
+                    const meshName = hitObj.name;
+                    
+                    if (partDatabase[meshName]) {
+                        const cb = document.getElementById(`check-${meshName}`);
+                        
+                        if (cb) {
+                            if (!cb.checked) {
+                                cb.checked = true;
+                                togglePart(meshName, true);
+                            } else {
+                                adjustQty(meshName, 1); // คลิกซ้ำเพื่อบวกจำนวนเพิ่ม
+                            }
+                        }
+                    }
                 }
             }
         }
