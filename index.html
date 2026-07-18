@@ -2,9 +2,11 @@ html_content = '''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Enterprise 3D Spare Part Catalog - Alpha Compact LH/RH</title>
     <style>
+        * { box-sizing: border-box; }
+        
         html, body {
             margin: 0;
             padding: 0;
@@ -14,6 +16,8 @@ html_content = '''<!DOCTYPE html>
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
             background-color: #121212;
             color: #e0e0e0;
+            -webkit-text-size-adjust: 100%;
+            touch-action: none;
         }
 
         .wrapper {
@@ -21,37 +25,42 @@ html_content = '''<!DOCTYPE html>
             width: 100%;
             height: 100vh;
             position: relative;
+            flex-direction: row;
         }
 
+        /* ===== CANVAS AREA ===== */
         #canvas-container {
             width: 75vw;
             height: 100vh;
             position: relative;
             background: radial-gradient(circle, #2a2a2a 0%, #141414 100%);
-            box-sizing: border-box;
+            flex-shrink: 0;
         }
         canvas {
             width: 100% !important;
             height: 100% !important;
             display: block;
+            touch-action: none;
         }
 
+        /* ===== SIDEBAR ===== */
         #sidebar {
             width: 25vw;
             height: 100vh;
             background-color: #1e1e1e;
             border-left: 2px solid #2d2d2d;
-            box-sizing: border-box;
             display: flex;
             flex-direction: column;
             z-index: 10;
             box-shadow: -5px 0 25px rgba(0,0,0,0.5);
+            flex-shrink: 0;
+            transition: transform 0.3s ease;
         }
 
         .sidebar-header {
-            padding: 24px 20px;
+            padding: 20px 16px;
             background: linear-gradient(135deg, #0e639c 0%, #064573 100%);
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 700;
             text-align: center;
             letter-spacing: 0.5px;
@@ -60,12 +69,12 @@ html_content = '''<!DOCTYPE html>
         }
 
         .section-title {
-            padding: 12px 20px;
+            padding: 10px 16px;
             background-color: #252526;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 1.2px;
+            letter-spacing: 1px;
             color: #8e8e8e;
             border-bottom: 1px solid #2d2d2d;
             border-top: 1px solid #2d2d2d;
@@ -74,8 +83,9 @@ html_content = '''<!DOCTYPE html>
         #parts-list {
             flex: 1;
             overflow-y: auto;
-            padding: 15px;
+            padding: 12px;
             background-color: #1e1e1e;
+            -webkit-overflow-scrolling: touch;
         }
 
         .part-item {
@@ -83,19 +93,20 @@ html_content = '''<!DOCTYPE html>
             align-items: center;
             justify-content: space-between;
             background: linear-gradient(135deg, #252526 0%, #2a2a2c 100%);
-            margin-bottom: 10px;
-            padding: 12px 14px;
+            margin-bottom: 8px;
+            padding: 10px 12px;
             border-radius: 8px;
             border: 1px solid #333333;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
+            min-height: 52px;
         }
 
-        .part-item:hover {
+        .part-item:hover, .part-item:active {
             border-color: #0e639c;
             background: linear-gradient(135deg, #2d2d30 0%, #333338 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3), 0 0 0 1px rgba(14, 99, 156, 0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(14, 99, 156, 0.3);
         }
 
         .part-item.active-part {
@@ -104,20 +115,21 @@ html_content = '''<!DOCTYPE html>
             box-shadow: 0 0 15px rgba(14, 99, 156, 0.4), inset 0 0 20px rgba(14, 99, 156, 0.1);
         }
 
-        .part-info { display: flex; flex-direction: column; max-width: 75%; }
-        .part-id { font-size: 0.75rem; color: #0e639c; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 2px; }
-        .part-name { font-size: 0.9rem; color: #e0e0e0; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+        .part-info { display: flex; flex-direction: column; max-width: 72%; }
+        .part-id { font-size: 0.7rem; color: #0e639c; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .part-name { font-size: 0.85rem; color: #e0e0e0; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
 
         .checkbox-container {
             position: relative;
             cursor: pointer;
             display: flex;
             align-items: center;
+            padding: 8px;
         }
         .checkbox-container input { display: none; }
         .custom-checkbox {
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             border: 2px solid #555;
             border-radius: 5px;
             display: inline-block;
@@ -136,12 +148,12 @@ html_content = '''<!DOCTYPE html>
             left: 50%;
             transform: translate(-50%, -50%);
             color: white;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: bold;
         }
 
         #cart-container {
-            height: 42vh;
+            height: 38vh;
             background-color: #141414;
             border-top: 2px solid #2d2d2d;
             display: flex;
@@ -151,7 +163,8 @@ html_content = '''<!DOCTYPE html>
         #cart-list {
             flex: 1;
             overflow-y: auto;
-            padding: 15px;
+            padding: 12px;
+            -webkit-overflow-scrolling: touch;
         }
 
         .cart-item {
@@ -159,15 +172,16 @@ html_content = '''<!DOCTYPE html>
             align-items: center;
             justify-content: space-between;
             background: linear-gradient(135deg, #212121 0%, #252525 100%);
-            padding: 10px 14px;
+            padding: 10px 12px;
             margin-bottom: 8px;
             border-radius: 6px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             border-left: 4px solid #0e639c;
             border-top: 1px solid #2d2d2d;
             border-right: 1px solid #2d2d2d;
             border-bottom: 1px solid #2d2d2d;
             animation: fadeIn 0.3s ease;
+            min-height: 48px;
         }
 
         @keyframes fadeIn {
@@ -183,60 +197,73 @@ html_content = '''<!DOCTYPE html>
         .qty-controls {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .btn-qty {
             background: linear-gradient(135deg, #2d2d30 0%, #333338 100%);
             color: #fff;
             border: 1px solid #444;
-            padding: 4px 10px;
+            padding: 6px 12px;
             cursor: pointer;
             border-radius: 4px;
             font-weight: bold;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             transition: all 0.2s;
+            min-width: 32px;
+            min-height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .btn-qty:hover { background: #0e639c; border-color: #1177bb; box-shadow: 0 0 8px rgba(14, 99, 156, 0.4); }
+        .btn-qty:hover, .btn-qty:active { background: #0e639c; border-color: #1177bb; box-shadow: 0 0 8px rgba(14, 99, 156, 0.4); }
 
         .btn-remove {
             background: linear-gradient(135deg, #4a1515 0%, #5a2020 100%);
             color: #ff8888;
             border: 1px solid #662222;
-            padding: 4px 8px;
+            padding: 6px 10px;
             cursor: pointer;
             border-radius: 4px;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             transition: all 0.2s;
+            min-width: 32px;
+            min-height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .btn-remove:hover { background: #a61c1c; color: #fff; box-shadow: 0 0 8px rgba(166, 28, 28, 0.4); }
+        .btn-remove:hover, .btn-remove:active { background: #a61c1c; color: #fff; box-shadow: 0 0 8px rgba(166, 28, 28, 0.4); }
 
+        /* ===== TOOLTIP ===== */
         #tooltip {
             position: fixed;
             display: none;
             background-color: rgba(20, 20, 20, 0.95);
             border: 2px solid #0e639c;
-            padding: 14px;
+            padding: 12px;
             border-radius: 8px;
             pointer-events: none;
             z-index: 100;
             box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            width: 240px;
+            width: 220px;
             backdrop-filter: blur(4px);
+            max-width: 80vw;
         }
 
         #tooltip img {
             width: 100%;
             height: auto;
             border-radius: 6px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             border: 1px solid #333;
             background-color: #fff;
         }
 
-        .tooltip-title { font-weight: 700; color: #0e639c; font-size: 0.8rem; letter-spacing: 0.5px; }
-        .tooltip-name { font-size: 0.95rem; margin-top: 4px; color: #ffffff; font-weight: 600; }
+        .tooltip-title { font-weight: 700; color: #0e639c; font-size: 0.75rem; letter-spacing: 0.5px; }
+        .tooltip-name { font-size: 0.9rem; margin-top: 4px; color: #ffffff; font-weight: 600; }
 
+        /* ===== LOADING ===== */
         #loading-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -249,22 +276,23 @@ html_content = '''<!DOCTYPE html>
         }
 
         .spinner {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             border: 4px solid #333;
             border-top: 4px solid #0e639c;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+            margin: 0 auto 12px;
         }
 
+        /* ===== STATUS BAR ===== */
         #status-bar {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
             background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            padding: 20px 30px;
+            padding: 16px 20px;
             pointer-events: none;
             z-index: 40;
         }
@@ -272,10 +300,176 @@ html_content = '''<!DOCTYPE html>
         #status-text {
             color: #0e639c;
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.9rem;
             letter-spacing: 1px;
             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
+
+        /* ===== MOBILE MENU BUTTON ===== */
+        #mobile-menu-btn {
+            display: none;
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 60;
+            background: linear-gradient(135deg, #0e639c 0%, #064573 100%);
+            color: #fff;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transition: all 0.2s;
+        }
+        #mobile-menu-btn:hover, #mobile-menu-btn:active {
+            background: #1177bb;
+            transform: scale(1.05);
+        }
+
+        /* ===== MOBILE CLOSE BUTTON ===== */
+        #mobile-close-btn {
+            display: none;
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 70;
+            background: #a61c1c;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        /* ===== OVERLAY FOR MOBILE SIDEBAR ===== */
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 9;
+        }
+
+        /* ===== RESPONSIVE: TABLET (max-width: 1024px) ===== */
+        @media (max-width: 1024px) {
+            #canvas-container { width: 65vw; }
+            #sidebar { width: 35vw; }
+            .sidebar-header { font-size: 1rem; padding: 16px 12px; }
+            .part-name { font-size: 0.8rem; }
+            .cart-item { font-size: 0.75rem; }
+        }
+
+        /* ===== RESPONSIVE: MOBILE (max-width: 768px) ===== */
+        @media (max-width: 768px) {
+            .wrapper { flex-direction: column; }
+            
+            #canvas-container {
+                width: 100vw;
+                height: 55vh;
+                order: 1;
+            }
+            
+            #sidebar {
+                width: 100vw;
+                height: 45vh;
+                border-left: none;
+                border-top: 2px solid #2d2d2d;
+                order: 2;
+                box-shadow: 0 -5px 25px rgba(0,0,0,0.5);
+            }
+            
+            #mobile-menu-btn { display: none; }
+            
+            .sidebar-header { 
+                font-size: 1rem; 
+                padding: 12px; 
+            }
+            
+            .section-title { 
+                padding: 8px 12px; 
+                font-size: 0.7rem; 
+            }
+            
+            #parts-list { padding: 8px; }
+            
+            .part-item {
+                padding: 8px 10px;
+                margin-bottom: 6px;
+                min-height: 44px;
+            }
+            
+            .part-id { font-size: 0.65rem; }
+            .part-name { font-size: 0.8rem; }
+            
+            .custom-checkbox {
+                width: 24px;
+                height: 24px;
+            }
+            
+            #cart-container { height: 35vh; }
+            #cart-list { padding: 8px; }
+            
+            .cart-item {
+                padding: 8px 10px;
+                font-size: 0.75rem;
+                min-height: 44px;
+            }
+            
+            .btn-qty, .btn-remove {
+                min-width: 36px;
+                min-height: 36px;
+                padding: 8px 12px;
+            }
+            
+            #tooltip {
+                width: 180px;
+                padding: 10px;
+            }
+            
+            #status-bar { padding: 12px 16px; }
+            #status-text { font-size: 0.8rem; }
+        }
+
+        /* ===== RESPONSIVE: SMALL MOBILE (max-width: 480px) ===== */
+        @media (max-width: 480px) {
+            #canvas-container { height: 50vh; }
+            #sidebar { height: 50vh; }
+            
+            .sidebar-header { font-size: 0.9rem; padding: 10px; }
+            .part-name { font-size: 0.75rem; }
+            .cart-item { font-size: 0.7rem; }
+            
+            .btn-qty, .btn-remove {
+                min-width: 32px;
+                min-height: 32px;
+                padding: 6px 10px;
+            }
+        }
+
+        /* ===== LANDSCAPE MOBILE ===== */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .wrapper { flex-direction: row; }
+            #canvas-container { 
+                width: 60vw; 
+                height: 100vh; 
+                order: 1;
+            }
+            #sidebar { 
+                width: 40vw; 
+                height: 100vh; 
+                border-top: none;
+                border-left: 2px solid #2d2d2d;
+                order: 2;
+            }
+        }
+
+        /* ===== SCROLLBAR STYLING ===== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1e1e1e; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0e639c; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -286,10 +480,11 @@ html_content = '''<!DOCTYPE html>
     <div class="wrapper">
         
         <div id="canvas-container">
+            <button id="mobile-menu-btn" onclick="toggleSidebar()">☰ Parts</button>
             <div id="loading-overlay">
                 <div style="text-align:center;">
                     <div class="spinner"></div>
-                    <div style="color:#0e639c;font-weight:600;letter-spacing:1px;">LOADING 3D MODEL...</div>
+                    <div style="color:#0e639c;font-weight:600;letter-spacing:1px;font-size:0.9rem;">LOADING 3D MODEL...</div>
                 </div>
             </div>
             <div id="status-bar">
@@ -302,7 +497,10 @@ html_content = '''<!DOCTYPE html>
             </div>
         </div>
 
+        <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+        
         <div id="sidebar">
+            <button id="mobile-close-btn" onclick="toggleSidebar()">✕ Close</button>
             <div class="sidebar-header">ALPHA COMPACT INDUSTRIAL</div>
             
             <div class="section-title">Available Parts (Hover/Select)</div>
@@ -317,6 +515,67 @@ html_content = '''<!DOCTYPE html>
     </div>
 
     <script>
+        // ===== MOBILE SIDEBAR TOGGLE =====
+        let sidebarOpen = false;
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const menuBtn = document.getElementById('mobile-menu-btn');
+            const closeBtn = document.getElementById('mobile-close-btn');
+            
+            if (window.innerWidth <= 768) {
+                sidebarOpen = !sidebarOpen;
+                if (sidebarOpen) {
+                    sidebar.style.transform = 'translateY(0)';
+                    overlay.style.display = 'block';
+                    menuBtn.style.display = 'none';
+                    closeBtn.style.display = 'block';
+                } else {
+                    sidebar.style.transform = 'translateY(100%)';
+                    overlay.style.display = 'none';
+                    menuBtn.style.display = 'block';
+                    closeBtn.style.display = 'none';
+                }
+            }
+        }
+
+        function initMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const menuBtn = document.getElementById('mobile-menu-btn');
+            const closeBtn = document.getElementById('mobile-close-btn');
+            
+            if (window.innerWidth <= 768) {
+                sidebar.style.position = 'fixed';
+                sidebar.style.bottom = '0';
+                sidebar.style.left = '0';
+                sidebar.style.right = '0';
+                sidebar.style.height = '60vh';
+                sidebar.style.zIndex = '20';
+                sidebar.style.borderTop = '2px solid #2d2d2d';
+                sidebar.style.borderLeft = 'none';
+                sidebar.style.transform = 'translateY(100%)';
+                sidebar.style.transition = 'transform 0.3s ease';
+                menuBtn.style.display = 'block';
+                closeBtn.style.display = 'none';
+                sidebarOpen = false;
+            } else {
+                sidebar.style.position = '';
+                sidebar.style.bottom = '';
+                sidebar.style.left = '';
+                sidebar.style.right = '';
+                sidebar.style.height = '';
+                sidebar.style.zIndex = '';
+                sidebar.style.borderTop = '';
+                sidebar.style.borderLeft = '';
+                sidebar.style.transform = '';
+                menuBtn.style.display = 'none';
+                closeBtn.style.display = 'none';
+                document.getElementById('sidebar-overlay').style.display = 'none';
+                sidebarOpen = false;
+            }
+        }
+
+        // ===== PARTS DATA =====
         const masterSparePartsCatalog = {
             "BAUGRUPPE_A_CHASSIS": [
                 { id: "40003272", name: "Cover with controller LH", img: "https://via.placeholder.com/200x120/0e639c/ffffff?text=Cover+LH" },
@@ -471,6 +730,7 @@ html_content = '''<!DOCTYPE html>
 
         updateCartUI();
 
+        // ===== THREE.JS SETUP =====
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x1a1a1a);
@@ -484,9 +744,6 @@ html_content = '''<!DOCTYPE html>
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        // FIX: เอา toneMapping ออกเพื่อป้องกันกระพริบ
-        // renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        // renderer.toneMappingExposure = 1.2;
         container.appendChild(renderer.domElement);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -494,6 +751,9 @@ html_content = '''<!DOCTYPE html>
         controls.dampingFactor = 0.05;
         controls.maxDistance = 100;
         controls.minDistance = 5;
+        controls.enablePan = true;
+        controls.enableZoom = true;
+        controls.touchAction = 'none';
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
@@ -526,7 +786,6 @@ html_content = '''<!DOCTYPE html>
         const loader = new THREE.GLTFLoader();
         let loadedModel;
         
-        // ===== สีธรรมดาแบบมืออาชีพ (Industrial Professional Palette) =====
         const professionalMaterialPalette = [
             { color: 0xf5f5f5, roughness: 0.4, metalness: 0.05 },
             { color: 0xe8e8e8, roughness: 0.35, metalness: 0.1 },
@@ -575,10 +834,9 @@ html_content = '''<!DOCTYPE html>
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
             
-            // FIX: ย้ายเครื่องให้อยู่ด้านบน (ปรับ Y ให้สูงขึ้น)
-            loadedModel.position.x += (loadedModel.position.x - center.x);
-            loadedModel.position.y += (loadedModel.position.y - center.y) + 8; // +8 ยกขึ้นด้านบน
-            loadedModel.position.z += (loadedModel.position.z - center.z);
+            loadedModel.position.x = -center.x;
+            loadedModel.position.y = -center.y + 15;
+            loadedModel.position.z = -center.z;
             
             const maxDim = Math.max(size.x, size.y, size.z);
             const scale = 25 / maxDim;
@@ -813,18 +1071,28 @@ html_content = '''<!DOCTYPE html>
         }
         animate();
 
-        window.addEventListener('resize', onWindowResize, false);
+        // ===== RESPONSIVE RESIZE =====
         function onWindowResize() {
-            camera.aspect = container.clientWidth / container.clientHeight;
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            camera.aspect = w / h;
             camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setSize(w, h);
+            
+            // Re-init mobile sidebar on resize
+            initMobileSidebar();
         }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        // Init mobile sidebar on load
+        initMobileSidebar();
     </script>
 </body>
 </html>'''
 
-with open('/mnt/agents/output/3d_catalog_fixed.html', 'w', encoding='utf-8') as f:
+with open('/mnt/agents/output/3d_catalog_responsive.html', 'w', encoding='utf-8') as f:
     f.write(html_content)
 
-print("✅ บันทึกไฟล์สำเร็จ: 3d_catalog_fixed.html")
+print("✅ บันทึกไฟล์สำเร็จ: 3d_catalog_responsive.html")
 print(f"📄 ขนาดไฟล์: {len(html_content):,} ตัวอักษร")
