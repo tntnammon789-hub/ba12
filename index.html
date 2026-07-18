@@ -33,6 +33,39 @@
             pointer-events: auto; display: flex; flex-direction: column;
         }
 
+        /* Header Style with Book Icon Link */
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+        .sidebar-header h3 { margin: 0; font-size: 20px; color: #222; border-bottom: none; padding-bottom: 0; }
+        
+        /* ปุ่มไอคอนหนังสือสำหรับเปิดลิงก์ดาวน์โหลด Manual */
+        .manual-link-btn {
+            background: #f0f4f8;
+            border: 1px solid #ced4da;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .manual-link-btn:hover {
+            background: #e2e8f0;
+            transform: scale(1.1);
+            border-color: var(--primary);
+        }
+
         /* Shopping Cart Section */
         #cart-section {
             background: #eef2f7; padding: 12px; border-radius: 12px;
@@ -44,7 +77,6 @@
 
         /* Parts List Styling */
         .parts-container { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
-        h3 { margin-top: 0; color: #222; font-size: 20px; border-bottom: 2px solid var(--primary); padding-bottom: 8px; }
         .section-title { font-weight: bold; color: var(--primary); margin: 18px 0 6px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid var(--primary); padding-left: 6px; }
         
         .part-item { 
@@ -82,7 +114,11 @@
         <div><!-- 3D Area left blank --></div>
         
         <div id="sidebar-panel">
-            <h3>Alpha Compact Store</h3>
+            <!-- ส่วนหัวข้อที่มีปุ่มไอคอนหนังสือเชื่อมลิงก์ภายนอก -->
+            <div class="sidebar-header">
+                <h3>Alpha Compact Store</h3>
+                <a href="https://drive.google.com/file/d/1K3_B8owTqt8Z3EBZsreSOENv2JlD_VeM/view?usp=sharing" target="_blank" class="manual-link-btn" title="คลิกเพื่อดาวน์โหลดคู่มือไฟล์เต็ม (PDF)">📖</a>
+            </div>
             
             <!-- ตะกร้าสินค้า (Shopping Cart) -->
             <div id="cart-section">
@@ -101,7 +137,7 @@
     </div>
 
     <script>
-        // ฐานข้อมูลรหัสอะไหล่แบบสมบูรณ์จากตาราง PDF ทุกตัวแยกตามหน้าหมวดหมู่
+        // ฐานข้อมูลรหัสอะไหล่แบบสมบูรณ์จากตาราง PDF ทุกตัวแยกตามหน้าหมวดหมู่[cite: 1]
         const completePdfDatabase = {
             "Baugr. A: Gehäuse / Chassis": [
                 { pn: "40003272", name: "Cover with controller LH (base)" },
@@ -160,7 +196,7 @@
                 { pn: "35001790", name: "Motor Drive 120-150mm" }
             ],
             "Baugr. C: Aufspulung / Rewinder": [
-                { pn: "35001797", name: "Dancer / Tänzer" },
+                { pn: "35001797", name: "Dancer / Tันเซอร์" },
                 { pn: "35001777", name: "Rewinder shaft 120mm" },
                 { pn: "35001926", name: "Rewinder shaft 150mm" },
                 { pn: "35001798", name: "Rewinder Assembly" },
@@ -182,34 +218,34 @@
                 { pn: "35080040", name: "Eccentric support 120mm" },
                 { pn: "35080042", name: "Swining support plate LH 120mm" },
                 { pn: "35080041", name: "Swining support plate RH 120mm" },
-                { pn: "33002259", name: "Stop dog / Anschlag" },
-                { pn: "35080002", name: "Deflection roller / Umlenkrolle" },
-                { pn: "33002249", name: "Stop dog / Anschlag (Small)" },
+                { pn: "33002259", name: "Stop dog / จำกัดระยะ" },
+                { pn: "35080002", name: "Deflection roller / ลูกกลิ้งนำทาง" },
+                { pn: "33002249", name: "Stop dog / จำกัดระยะ (เล็ก)" },
                 { pn: "32901096", name: "Support of applicator tongue" },
                 { pn: "33001952", name: "Applicator sheet 140x60x2mm" },
                 { pn: "32901174", name: "Swinging support plate LH 150mm" },
                 { pn: "32910001", name: "Hand protection RH 150mm" },
-                { pn: "32910246", name: "Axle / Achse D10x20.5mm" },
+                { pn: "32910246", name: "Axle / แกนยึด D10x20.5mm" },
                 { pn: "32910247", name: "Eccentric counter plate" },
-                { pn: "33001790", name: "Eccentric / Exenterlager" },
+                { pn: "33001790", name: "Eccentric / แบริ่งเบี้ยวหลุด" },
                 { pn: "32901088", name: "Deflection axle D10x195" },
                 { pn: "32901084", name: "Deflection axle D10x175mm" },
                 { pn: "32910025", name: "Hand protection LH 150mm" },
-                { pn: "32901080", name: "Axle / Achse D10x87mm" },
+                { pn: "32901080", name: "Axle / แกนยึด D10x87mm" },
                 { pn: "32901173", name: "Swinging support plate RH 150mm" },
                 { pn: "33001954", name: "Applicator sheet 171x60x2mm" },
-                { pn: "33016857", name: "Slide bearings / Gleitlager" },
+                { pn: "33016857", name: "Slide bearings / บูชเลื่อน" },
                 { pn: "35080018", name: "Deflection roller 150mm" }
             ],
             "Baugr. I: Optionen / Modules": [
                 { pn: "35080043", name: "Pressing roller 120mm" },
                 { pn: "35080044", name: "Pressing roller 150mm" },
-                { pn: "32901107", name: "Holder / Halter" },
-                { pn: "32901110", name: "Axle 120mm / Achse 120mm" },
-                { pn: "32901111", name: "Axle 150mm / Achse 150mm" },
+                { pn: "32901107", name: "Holder / ตัวยึด" },
+                { pn: "32901110", name: "Axle 120mm / แกนยึด 120mm" },
+                { pn: "32901111", name: "Axle 150mm / แกนยึด 150mm" },
                 { pn: "33004354", name: "Pressing brush 120mm" },
                 { pn: "33004356", name: "Pressing brush 150mm" },
-                { pn: "32901891", name: "Axle 120mm (Brush)" },
+                { pn: "32901891", name: "Axle 120mm (แปรงปัด)" },
                 { pn: "33016789", name: "Terminal Panel (Dual Knob)" },
                 { pn: "29802276", name: "Display Controller" },
                 { pn: "72900275", name: "Mounting bracket" },
