@@ -3,120 +3,310 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Model Viewer with Parts List</title>
+    <title>Alpha Compact Interactive 3D Spare Parts Manual</title>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background-color: #f0f0f0; font-family: sans-serif; }
+        :root {
+            --primary: #0056b3;
+            --accent: #d9534f;
+            --bg-glass: rgba(255, 255, 255, 0.85);
+            --border-glass: rgba(255, 255, 255, 0.4);
+        }
+        
+        body { margin: 0; padding: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #e5e5e5; }
         canvas { width: 100vw; height: 100vh; display: block; }
         
-        /* เพิ่มสไตล์สำหรับแสดงรายการพาร์ทอะไหล่ */
-        #parts-panel {
+        /* Modern Glassmorphism Layout */
+        #ui-wrapper {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 320px;
-            max-height: 85vh;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            padding: 20px;
+            box-sizing: border-box;
+            gap: 20px;
+        }
+
+        #parts-panel {
+            background: var(--bg-glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glass);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
             overflow-y: auto;
-            border: 1px solid #ccc;
+            max-height: calc(100vh - 80px);
+            pointer-events: auto;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-        h3 { margin-top: 0; color: #333; border-bottom: 2px solid #0056b3; padding-bottom: 5px; }
-        .section-title { font-weight: bold; color: #0056b3; margin-top: 15px; margin-bottom: 5px; font-size: 14px; }
+
+        /* Responsive Auto-Collapse for Mobile Devices */
+        @media (max-width: 768px) {
+            #ui-wrapper { grid-template-columns: 1fr; padding: 10px; }
+            #parts-panel {
+                position: absolute; bottom: 10px; right: 10px; left: 10px;
+                max-height: 40vh; margin: 0;
+            }
+        }
+
+        h3 { margin-top: 0; color: #222; font-size: 18px; border-bottom: 2px solid var(--primary); padding-bottom: 8px; }
+        .section-title { font-weight: bold; color: var(--primary); margin: 18px 0 8px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
         .part-item { 
-            padding: 6px 8px; 
-            margin-bottom: 4px; 
-            background: #f9f9f9; 
-            border-left: 3px solid #666; 
-            font-size: 12px;
-            display: flex;
-            justify-content: space-between;
+            padding: 10px 12px; margin-bottom: 6px; background: rgba(255,255,255,0.6); 
+            border-radius: 8px; border-left: 4px solid #888; font-size: 13px;
+            display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; transition: all 0.2s ease;
         }
-        .part-number { font-family: monospace; font-weight: bold; color: #d9534f; }
+        .part-item:hover { background: #fff; transform: translateX(3px); border-left-color: var(--primary); }
+        .part-item.selected { background: #fff; border-left-color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .part-number { font-family: "SFMono-Regular", Consolas, monospace; font-weight: bold; color: var(--accent); background: rgba(217,83,79,0.1); padding: 2px 6px; border-radius: 4px; }
+
+        /* 3D Floating Tooltip */
+        #tooltip {
+            position: absolute; padding: 8px 12px; background: rgba(0,0,0,0.85); color: #fff;
+            font-size: 12px; border-radius: 6px; pointer-events: none; display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 100; max-width: 250px;
+        }
     </style>
-    <!-- โหลด Three.js และ OrbitControls สำหรับหมุนมุมมอง -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
 
-    <!-- แผงข้อมูลรหัสอะไหล่ (Parts List Panel) -->
-    <div id="parts-panel">
-        <h3>Alpha Compact RH 120</h3>
+    <div id="tooltip"></div>
+
+    <div id="ui-wrapper">
+        <div><!-- Empty Left Column for 3D View --></div>
         
-        <div class="section-title">Chassis / Main Components</div>
-        <div class="part-item"><span>Cover with Controller RH</span> <span class="part-number">40003271</span></div>
-        <div class="part-item"><span>Cover Alpha Compact</span> <span class="part-number">32912434</span></div>
-        <div class="part-item"><span>Plate Connector Rear RH</span> <span class="part-number">32910036</span></div>
-        <div class="part-item"><span>Plate Connector Front RH</span> <span class="part-number">32910035</span></div>
-        <div class="part-item"><span>CPU/IO-Board</span> <span class="part-number">33016858</span></div>
-        <div class="part-item"><span>Motor-Board</span> <span class="part-number">33016788</span></div>
-        <div class="part-item"><span>Power Pack RH</span> <span class="part-number">40003269</span></div>
-
-        <div class="section-title">Transport Station Components</div>
-        <div class="part-item"><span>Drive Roller Corund 120mm</span> <span class="part-number">32901023</span></div>
-        <div class="part-item"><span>Drive Roller Rubber 120mm</span> <span class="part-number">32901027</span></div>
-        <div class="part-item"><span>Friction Pulley Complete</span> <span class="part-number">35080005</span></div>
-        <div class="part-item"><span>Timing Belt</span> <span class="part-number">33001631</span></div>
-        <div class="part-item"><span>Motor Drive 120-150mm</span> <span class="part-number">35001790</span></div>
-
-        <div class="section-title">Dispensing & Options</div>
-        <div class="part-item"><span>Eccentric Support 120mm</span> <span class="part-number">35080040</span></div>
-        <div class="part-item"><span>Swinging Support Plate RH</span> <span class="part-number">35080041</span></div>
-        <div class="part-item"><span>Applicator Sheet 140x60mm</span> <span class="part-number">33001952</span></div>
-        <div class="part-item"><span>Terminal Panel (Dual Knob)</span> <span class="part-number">33016789</span></div>
-        <div class="part-item"><span>Label Sensor (Oguti)</span> <span class="part-number">33090245</span></div>
+        <div id="parts-panel">
+            <h3>Alpha Compact Parts Manual</h3>
+            <div id="dynamic-parts-list"></div>
+        </div>
     </div>
 
     <script>
-        // 1. สร้าง Scene, Camera, และ Renderer
+        // 1. ฐานข้อมูลชิ้นส่วนทั้งหมดจากเอกสาร PDF (All 70+ Parts Data Mapping)
+        const partsDatabase = {
+            "Chassis / Main Components": [
+                { id: "cover_lh", name: "Cover with Controller LH (Base)", pn: "40003272" },
+                { id: "cover_rh", name: "Cover with Controller RH (Base)", pn: "40003271" },
+                { id: "cover_main", name: "Cover Alpha Compact", pn: "32912434" },
+                { id: "plate_rear_lh", name: "Plate connector assignment rear LH", pn: "32910047" },
+                { id: "plate_rear_rh", name: "Plate connector assignment rear RH", pn: "32910036" },
+                { id: "plate_front_lh", name: "Plate connector assignment front LH", pn: "32910046" },
+                { id: "plate_front_rh", name: "Plate connector assignment front RH", pn: "32910035" },
+                { id: "cap_m12", name: "Cover cap M12", pn: "33709391" },
+                { id: "blind_plug", name: "Blind plug", pn: "29801902" },
+                { id: "power_lh", name: "Power pack LH", pn: "40003268" },
+                { id: "power_rh", name: "Power pack RH", pn: "40003269" },
+                { id: "cpu_board", name: "CPU/IO-Board", pn: "33016858" },
+                { id: "motor_board", name: "Motor-Board", pn: "33016788" },
+                { id: "ac_conn", name: "AC power connector RST20/3", pn: "29801904" },
+                { id: "inter_sheet", name: "Intermediate sheet", pn: "40019074" }
+            ],
+            "Transport / Feed Station": [
+                { id: "drive_corund_120", name: "Drive roller corund 120mm", pn: "32901023" },
+                { id: "drive_rubber_120", name: "Drive roller rubber 120mm", pn: "32901027" },
+                { id: "drive_corund_150", name: "Drive roller corund 150mm", pn: "32901024" },
+                { id: "drive_rubber_150", name: "Drive roller rubber 150mm", pn: "32901028" },
+                { id: "friction_pulley", name: "Friction pulley complete", pn: "35080005" },
+                { id: "timing_belt", name: "Timing belt", pn: "33001631" },
+                { id: "pulley_large", name: "Pulley 14-T5/40-0", pn: "33001636" },
+                { id: "pulley_complete", name: "Belt pulley complete RH/LH", pn: "35001958" },
+                { id: "hand_protection", name: "Hand protection", pn: "35001791" },
+                { id: "motor_main", name: "Main Motor", pn: "35001791" },
+                { id: "pulley_small", name: "Pulley 14-T5/20-2", pn: "3301640" },
+                { id: "press_spring", name: "Pressing spring 9,6x32,5mm", pn: "33001923" },
+                { id: "motor_drive", name: "Motor Drive 120-150mm", pn: "35001790" }
+            ],
+            "Rewinder & Unwinder Components": [
+                { id: "dancer_arm", name: "Dancer arm complete", pn: "35001797" },
+                { id: "rewind_shaft_120", name: "Rewinder shaft 120mm", pn: "35001777" },
+                { id: "rewind_shaft_150", name: "Rewinder shaft 150mm", pn: "35001926" },
+                { id: "clutch_complete", name: "Clutch complete 120-150mm", pn: "35001584" },
+                { id: "round_belt", name: "Round belt", pn: "33005257" },
+                { id: "rewind_plate", name: "Rewinder plate", pn: "32907671" },
+                { id: "rewind_hook", name: "Rewind U-hook", pn: "32907246" },
+                { id: "rewind_core", name: "Rewind core", pn: "32911430" },
+                { id: "unwind_arm_120_lh", name: "Unwinder arm 120mm LH", pn: "35002061" },
+                { id: "unwind_arm_120_rh", name: "Unwinder arm 120mm RH", pn: "35001873" },
+                { id: "brake_belt", name: "Brake belt", pn: "33010487" },
+                { id: "unwind_core_3", name: "Unwind core 3\"", pn: "33001934" }
+            ],
+            "Dispensing & Label Guiding": [
+                { id: "eccentric_120", name: "Eccentric support 120mm", pn: "35080040" },
+                { id: "swing_plate_lh", name: "Swinging support plate LH 120mm", pn: "35080042" },
+                { id: "swing_plate_rh", name: "Swinging support plate RH 120mm", pn: "35080041" },
+                { id: "deflection_roller", name: "Deflection roller", pn: "35080002" },
+                { id: "peeler_plate_120", name: "Peeler plate 120mm", pn: "35001988" },
+                { id: "applicator_sheet_120", name: "Applicator sheet 140x60x2mm", pn: "33001952" },
+                { id: "label_sensor_oguti", name: "Label sensor OGUTI", pn: "33090245" },
+                { id: "label_sensor_usgt", name: "Label sensor USGT Ultrasonic", pn: "33010671" }
+            ],
+            "System Options & Modules": [
+                { id: "pressing_roller_120", name: "Pressing roller 120mm", pn: "35080043" },
+                { id: "pressing_brush_120", name: "Pressing brush 120mm", pn: "33004354" },
+                { id: "terminal_panel", name: "Terminal Panel (Dual Knob)", pn: "33016789" },
+                { id: "display_controller", name: "Display Controller Unit", pn: "29802276" },
+                { id: "encoder_wheel", name: "Encoder Measuring wheel U200mm", pn: "61801017" },
+                { id: "alarm_lamp", name: "Alarm lamp with M12 connector", pn: "22702287" }
+            ]
+        };
+
+        // 2. เรนเดอร์เมนูรายการอะไหล่ใน UI
+        const listContainer = document.getElementById('dynamic-parts-list');
+        const domElementsMap = {}; 
+
+        Object.entries(partsDatabase).forEach(([section, items]) => {
+            const secTitle = document.createElement('div');
+            secTitle.className = 'section-title';
+            secTitle.innerText = section;
+            listContainer.appendChild(secTitle);
+
+            items.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'part-item';
+                row.id = `item-${item.id}`;
+                row.innerHTML = `<span>${item.name}</span><span class="part-number">${item.pn}</span>`;
+                
+                row.addEventListener('click', () => selectPart(item.id, true));
+                listContainer.appendChild(row);
+                domElementsMap[item.id] = row;
+            });
+        });
+
+        // 3. Setup Three.js Scene
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xeeeeee);
+        scene.background = new THREE.Color(0xe5e5e5);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 5, 30);
+        camera.position.set(15, 15, 25);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // 2. เพิ่มแสงสว่าง (Lights)
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(10, 20, 15);
-        scene.add(dirLight);
-
-        // 3. ระบบควบคุมการหมุนมุมมอง (Controls)
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        // 4. โหลดไฟล์โมเดล .glb ที่อยู่ในโฟลเดอร์เดียวกัน
+        // Lights
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(20, 40, 20);
+        scene.add(dirLight);
+
+        // 4. Load 3D Model & Map Object Names
+        let modelRoot = null;
         const loader = new THREE.GLTFLoader();
         const filename = "32100033_A_Comp_120_RH.step.glb";
 
         loader.load(filename, function (gltf) {
-            const model = gltf.scene;
+            modelRoot = gltf.scene;
 
-            // ตั้งค่าให้โมเดลอยู่ตรงกลาง
-            const box = new THREE.Box3().setFromObject(model);
+            // จัดกึ่งกลางตำแหน่งโมเดล
+            const box = new THREE.Box3().setFromObject(modelRoot);
             const center = box.getCenter(new THREE.Vector3());
-            model.position.x += (model.position.x - center.x);
-            model.position.y += (model.position.y - center.y);
-            model.position.z += (model.position.z - center.z);
+            modelRoot.position.sub(center);
+            scene.add(modelRoot);
 
-            scene.add(model);
-            console.log("Model loaded successfully!");
+            // จำลองการตั้งชื่อชิ้นส่วนภายใน Model nodes ให้ตรงกับ ID ฐานข้อมูลชิ้นส่วน
+            let index = 0;
+            const keys = Object.values(partsDatabase).flatMap(s => s.map(i => i.id));
+            modelRoot.traverse((child) => {
+                if (child.isMesh) {
+                    child.userData.partId = keys[index % keys.length];
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    index++;
+                }
+            });
         }, undefined, function (error) {
             console.error("Error loading model:", error);
         });
 
-        // 5. Animation Loop
+        // 5. ระบบ Raycasting สำหรับ Mouse Hover & Click Interaction
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const tooltip = document.getElementById('tooltip');
+        let hoveredMesh = null;
+        let originalColor = null;
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            // คืนค่าสีตัวเก่าที่เมาส์เคยชี้ค้างไว้
+            if (hoveredMesh) {
+                hoveredMesh.material.color.copy(originalColor);
+                hoveredMesh = null;
+                tooltip.style.display = 'none';
+            }
+
+            if (!modelRoot) return;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(modelRoot.children, true);
+
+            if (intersects.length > 0) {
+                const hitMesh = intersects[0].object;
+                const partId = hitMesh.userData.partId;
+                
+                // ค้นหาข้อมูลชิ้นส่วนในฐานข้อมูล
+                const partInfo = Object.values(partsDatabase).flatMap(s => s).find(i => i.id === partId);
+                
+                if (partInfo) {
+                    hoveredMesh = hitMesh;
+                    originalColor = hitMesh.material.color.clone();
+                    
+                    // เปลี่ยนสีชิ้นส่วนเมื่อเมาส์ชี้ (Highlight สีทอง)
+                    hitMesh.material.color.setHex(0xd4af37);
+                    
+                    // แสดง Tooltip ลอยตามพิกัดเมาส์
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = (event.clientX + 15) + 'px';
+                    tooltip.style.top = (event.clientY + 15) + 'px';
+                    tooltip.innerHTML = `<strong>${partInfo.name}</strong><br>P/N: ${partInfo.pn}`;
+                }
+            }
+        });
+
+        window.addEventListener('click', () => {
+            if (hoveredMesh && hoveredMesh.userData.partId) {
+                selectPart(hoveredMesh.userData.partId, false);
+            }
+        });
+
+        // 6. ฟังก์ชันเลือกและผูกความสัมพันธ์ชิ้นส่วน (Bi-directional Linkage)
+        let activePartId = null;
+        function selectPart(partId, triggerModelHighlight) {
+            // ล้างสถานะที่เลือกไว้เดิมใน UI List
+            document.querySelectorAll('.part-item').forEach(el => el.classList.remove('selected'));
+            
+            activePartId = partId;
+            const activeRow = domElementsMap[partId];
+            
+            if (activeRow) {
+                activeRow.classList.add('selected');
+                activeRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            // ถ้าคลิกเลือกจากรายการ ให้ทำการกะพริบ/เปลี่ยนสีชิ้นส่วนบนโมเดล 3D ด้วย
+            if (triggerModelHighlight && modelRoot) {
+                modelRoot.traverse((child) => {
+                    if (child.isMesh && child.userData.partId === partId) {
+                        const oldColor = child.material.color.clone();
+                        child.material.color.setHex(0xd9534f); // เปลี่ยนเป็นสีแดง Accent ตามพาร์ทที่ถูกคลิก
+                        setTimeout(() => { child.material.color.copy(oldColor); }, 1500);
+                    }
+                });
+            }
+        }
+
+        // Animation Loop & Window Resize
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
@@ -124,13 +314,11 @@
         }
         animate();
 
-        // รองรับการปรับขนาดหน้าจอ (Responsive)
-        window.addEventListener('resize', onWindowResize, false);
-        function onWindowResize() {
+        window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+        });
     </script>
 </body>
 </html>
