@@ -44,21 +44,6 @@
             overflow: hidden;
         }
 
-        /* Responsive Settings Mobile (50/50 Layout) */
-        @media (max-width: 768px) {
-            #page-wrapper {
-                grid-template-columns: 1fr;
-                grid-template-rows: 50vh 50vh;
-            }
-            #sidebar-panel {
-                border-left: none;
-                border-top: 1px solid var(--border-glass);
-                padding: 15px;
-                box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
-                height: 50vh;
-            }
-        }
-
         /* Header Style */
         .sidebar-header {
             display: flex;
@@ -186,6 +171,42 @@
             box-shadow: 0 2px 6px rgba(40, 167, 69, 0.2);
         }
         .pdf-download-btn:hover { background: #1e7e34; }
+
+        /* 📱 ปรับปรุง Layout & อัดสเกล UI บนหน้าจอมือถือให้กะทัดรัด เห็นของเยอะขึ้น 3-4 แถว */
+        @media (max-width: 768px) {
+            #page-wrapper {
+                grid-template-columns: 1fr;
+                grid-template-rows: 50vh 50vh;
+            }
+            #sidebar-panel {
+                border-left: none;
+                border-top: 1px solid var(--border-glass);
+                padding: 10px; /* ลด Padding หลักของหน้าต่างลง */
+                box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+                height: 50vh;
+            }
+            .sidebar-header { margin-bottom: 8px; padding-bottom: 6px; }
+            .sidebar-header h3 { font-size: 16px; }
+            .manual-link-btn { padding: 4px 10px; font-size: 10px; }
+            
+            /* หดความสูงกล่องตะกร้าตอนพับเก็บให้บางลง */
+            #cart-section { margin-bottom: 8px; }
+            .cart-header-clickable { padding: 8px 10px; font-size: 11px; }
+            .cart-remark-badge { font-size: 10px; padding: 1px 4px; }
+            
+            /* กระชับระยะห่างของลิสต์รายการชิ้นส่วน เพื่อให้ดันเห็นพาร์ทได้ 3-4 รายการ */
+            .section-title { margin: 10px 0 4px 0; font-size: 11px; }
+            .part-item { padding: 6px 10px; margin-bottom: 4px; font-size: 11px; }
+            .part-name { font-size: 12px; }
+            .part-number { font-size: 10px; }
+            .add-cart-btn { padding: 6px 10px; font-size: 11px; }
+            
+            .sidebar-footer { padding-top: 6px; }
+            .pdf-download-btn { padding: 8px; font-size: 12px; }
+        }
+
+        /* Isolated Printing Window Style */
+        #print-pdf-layout { display: none; font-family: sans-serif; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -229,7 +250,7 @@
     </div>
 
     <script>
-        // ฐานข้อมูลชิ้นส่วนทั้งหมดจากเอกสาร PDF ครบถ้วนทุกหัวข้อ (70+ ชิ้นงาน)
+        // ฐานข้อมูลชิ้นส่วนทั้งหมดจากเอกสาร PDF ครบถ้วนทุกหัวข้อ 73 รายการ[cite: 1]
         const completePdfDatabase = {
             "Baugr. A: Gehäuse / Chassis (หน้า 8-9)": [
                 { pn: "40003272", name: "Cover with controller LH (base)" },
@@ -409,6 +430,7 @@
             renderCart();
         };
 
+        // ฟังก์ชันสั่งพิมพ์รายงานแยกเอกสารอิสระขึ้นมาเพื่อให้ข้อมูลแสดงผลครบ 100%[cite: 1]
         window.generatePartsPDF = function() {
             const keys = Object.keys(shoppingCart);
             if(keys.length === 0) {
